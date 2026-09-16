@@ -1,3 +1,11 @@
+git add .
+git commit -m "Release v1.2.4"
+git push origin main
+
+git tag v1.2.4
+git push origin v1.2.4
+
+
 # MutiaLytics — Local Municipal Data Analytics System
 
 Offline CBMS analytics for the Municipality of Mutia, Zamboanga del Norte. The desktop application runs locally with Electron and supports the CBMS 2022 and CBMS 2024 datasets.
