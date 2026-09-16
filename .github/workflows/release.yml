@@ -3,7 +3,7 @@ name: Build and Release MutiaLytics
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
 
 permissions:
@@ -23,7 +23,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --no-audit --no-fund
 
       - name: Verify package version matches tag
         shell: pwsh
@@ -35,7 +35,21 @@ jobs:
             exit 1
           }
 
+      - name: Build web application
+        run: npm run build
+
       - name: Build and publish Windows installer
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --win --x64 --publish always
+        run: npx electron-builder --win nsis --x64 --publish always
+
+      - name: Verify updater artifacts
+        shell: pwsh
+        run: |
+          $release = Get-ChildItem release -File
+          $exe = $release | Where-Object { $_.Name -match '\.exe$' }
+          $yml = $release | Where-Object { $_.Name -eq 'latest.yml' }
+          if (-not $exe) { Write-Error 'NSIS installer .exe was not produced.'; exit 1 }
+          if (-not $yml) { Write-Error 'latest.yml was not produced. Auto-update metadata is missing.'; exit 1 }
+          Write-Host "Installer: $($exe.Name)"
+          Write-Host "Updater metadata: $($yml.Name)"

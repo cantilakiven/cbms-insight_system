@@ -3,7 +3,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { BlobWriter, ZipWriter, TextReader, BlobReader } from "@zip.js/zip.js";
 import { getSourceWatermark } from "@/data/cbms";
-import { municipality, getActiveYear } from "@/data/cbms";
+import { municipality, getActiveYear, type DataYear } from "@/data/cbms";
 import { addExportLog, generatePassword, makeExportId, getExpectedSavedPath, saveBlobWithPrompt, emitExportPassword } from "./export-log";
 
 export interface ExportColumn {
@@ -36,6 +36,8 @@ export interface ExportPayload {
   rows: Record<string, any>[];
   note?: string;
   summary?: SummaryItem[];
+  /** Dataset year used for the export and source attribution. */
+  dataYear?: DataYear;
 }
 
 const safeName = (s: string) => s.replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, "").toLowerCase();
@@ -153,11 +155,11 @@ function escapePrintHtml(value: unknown): string {
  * operator can move through Page 1, Page 2, Page 3, etc. before printing.
  */
 export function buildPrintHtml(payload: GroupedExportPayload): string {
-  const { title, subtitle, columns, rows, summary, barangaySummaryColumns, barangaySummaryRows, groups } = payload;
+  const { title, subtitle, columns, rows, summary, barangaySummaryColumns, barangaySummaryRows, groups, dataYear } = payload;
   const sortedGroups = (groups || []).slice().sort((a, b) => compareText(a.title, b.title));
   const sbCols = barangaySummaryColumns || [];
   const sbRows = barangaySummaryRows || [];
-  const source = getSourceWatermark();
+  const source = getSourceWatermark(resolveExportYear(title, subtitle, dataYear));
   const rowsPerPage = columns.length >= 10 ? 24 : columns.length >= 7 ? 30 : 36;
   const pageHeader = (pageNo: number, label?: string) => `<header class="report-head">${pageNo === 1 ? `<div class="eyebrow">Mutia · Community-Based Monitoring System</div>` : ""}<h1>${escapePrintHtml(label || title)}</h1><p>${escapePrintHtml(subtitle || `Municipality: ${municipality}`)}</p><p class="meta">Generated: ${escapePrintHtml(new Date().toLocaleString())} · Page ${pageNo}</p></header>`;
   const renderTable = (tableRows: Record<string, any>[]) => `<table><thead><tr>${columns.map((c) => `<th>${escapePrintHtml(c.label)}</th>`).join("")}</tr></thead><tbody>${tableRows.map((r) => `<tr>${columns.map((c) => `<td>${escapePrintHtml(getVal(r, c.key))}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
@@ -165,7 +167,7 @@ export function buildPrintHtml(payload: GroupedExportPayload): string {
 
   let firstPageBody = "";
   if (summary?.length) {
-    firstPageBody += `<section class="summary-block"><h2>Summary</h2><table><thead><tr><th>Indicator</th><th>Count / Value</th><th>Percentage / Rate</th></tr></thead><tbody>${summary.map((item) => `<tr><td>${escapePrintHtml(item.label)}</td><td class="num">${escapePrintHtml(typeof item.value === "number" ? item.value.toLocaleString() : item.value)}</td><td class="num">${item.percentage == null ? "—" : `${item.percentage.toFixed(2)}%`}</td></tr>`).join("")}</tbody></table></section>`;
+    firstPageBody += `<section class="summary-block"><h2>Summary</h2><table><thead><tr><th>Indicator</th><th>Count / Value</th><th>Percentage Rate (%Rate) / Population (%Population)</th></tr></thead><tbody>${summary.map((item) => `<tr><td>${escapePrintHtml(item.label)}</td><td class="num">${escapePrintHtml(typeof item.value === "number" ? item.value.toLocaleString() : item.value)}</td><td class="num">${item.percentage == null ? "—" : `${item.percentage.toFixed(2)}%`}</td></tr>`).join("")}</tbody></table></section>`;
   }
   if (sbCols.length && sbRows.length) {
     firstPageBody += `<section class="summary-block"><h2>By Barangay Summary</h2><table><thead><tr>${sbCols.map((c) => `<th>${escapePrintHtml(c.label)}</th>`).join("")}</tr></thead><tbody>${sortRowsForExport(sbCols, sbRows).map((r) => `<tr>${sbCols.map((c) => `<td>${escapePrintHtml(getVal(r, c.key))}</td>`).join("")}</tr>`).join("")}</tbody></table></section>`;
@@ -221,6 +223,8 @@ function reportCode(title: string): string {
 }
 
 interface DocId {
+  /** dataset year represented by the export */
+  year: DataYear;
   /** unique title printed inside the document */
   docTitle: string;
   /** unique base filename */
@@ -230,13 +234,19 @@ interface DocId {
   generatedAt: string;
 }
 
-function makeDocId(title: string, subtitle?: string): DocId {
+function resolveExportYear(title: string, subtitle?: string, dataYear?: DataYear): DataYear {
+  if (dataYear === 2022 || dataYear === 2024) return dataYear;
+  const yearMatch = `${title} ${subtitle || ""}`.match(/\b(2022|2024)\b/);
+  return yearMatch ? Number(yearMatch[1]) as DataYear : getActiveYear();
+}
+
+function makeDocId(title: string, subtitle?: string, dataYear?: DataYear): DocId {
   const s = stamp();
   const id = makeExportId();
   const ref = `${s.slug}-${id.split("-").pop()!.slice(0, 5).toUpperCase()}`;
-  const yearMatch = `${title} ${subtitle || ""}`.match(/\b(2022|2024)\b/);
-  const year = yearMatch?.[1] || String(getActiveYear());
+  const year = resolveExportYear(title, subtitle, dataYear);
   return {
+    year,
     docTitle: `${title} — Doc. No. ${ref}`,
     base: `CBMS${year}-${safeName(municipality).toUpperCase()}_${reportCode(title)}_${s.slug}_${ref.split("-").pop()!.toUpperCase()}`,
     ref,
@@ -270,7 +280,7 @@ To open: use 7-Zip, WinRAR, or the built-in extractor on macOS/Linux with the
 password provided by the person who sent you this archive. This archive is
 AES-256 encrypted; do not share the password over the same channel as the file.
 
-${getSourceWatermark()}
+${getSourceWatermark(meta.doc.year)}
 `;
   await writer.add("README.txt", new TextReader(readme));
   await writer.close();
@@ -301,8 +311,8 @@ function showPasswordToast(filename: string, password: string, format: string) {
 }
 
 // ── CSV ───────────────────────────────────────────────────────────────────
-export async function exportCSV({ title, columns, rows, note, summary }: ExportPayload) {
-  const doc = makeDocId(title, subtitle);
+export async function exportCSV({ title, subtitle, columns, rows, note, summary, dataYear }: ExportPayload) {
+  const doc = makeDocId(title, subtitle, dataYear);
   rows = sortRowsForExport(columns, rows);
   const header = columns.map((c) => `"${c.label}"`).join(",");
   const body = rows
@@ -314,7 +324,7 @@ export async function exportCSV({ title, columns, rows, note, summary }: ExportP
     : "";
   const csv =
     `${doc.docTitle}\n"Municipality","${municipality}"\n"Generated","${doc.generatedAt}"\n\n` +
-    `${summaryBlock}${header}\n${body}\n${totalLine}\n\n${note || getSourceWatermark()}`;
+    `${summaryBlock}${header}\n${body}\n${totalLine}\n\n${note || getSourceWatermark(doc.year)}`;
   await packageProtected(`${doc.base}.csv`, csv, { format: "CSV", title, rowCount: rows.length, doc });
 }
 
@@ -382,8 +392,8 @@ const S = {
 
 const A1 = (r: number, c: number) => XLSX.utils.encode_cell({ r, c });
 
-export async function exportXLSX({ title, subtitle, columns, rows, note, summary }: ExportPayload) {
-  const doc = makeDocId(title, subtitle);
+export async function exportXLSX({ title, subtitle, columns, rows, note, summary, dataYear }: ExportPayload) {
+  const doc = makeDocId(title, subtitle, dataYear);
   rows = sortRowsForExport(columns, rows);
   const nCols = Math.max(columns.length, 3);
   const ws: XLSX.WorkSheet = {};
@@ -411,7 +421,8 @@ export async function exportXLSX({ title, subtitle, columns, rows, note, summary
   // Summary block
   if (summary && summary.length) {
     put(r, 0, "SUMMARY", S.sectionHead);
-    put(r, 1, "Count", S.sectionHead);
+    put(r, 1, "Count / Value", S.sectionHead);
+    put(r, 2, "Percentage Rate / Population", S.sectionHead);
     r++;
     for (const s of summary) {
       put(r, 0, s.label, S.summaryLabel);
@@ -444,7 +455,7 @@ export async function exportXLSX({ title, subtitle, columns, rows, note, summary
   merges.push({ s: { r, c: 0 }, e: { r, c: nCols - 1 } });
   r += 2;
 
-  put(r, 0, note || getSourceWatermark(), S.note);
+  put(r, 0, note || getSourceWatermark(doc.year), S.note);
   merges.push({ s: { r, c: 0 }, e: { r, c: nCols - 1 } });
   r++;
   put(r, 0, `Document No. ${doc.ref}`, S.note);
@@ -541,10 +552,11 @@ async function buildGenericDocx(payload: GroupedExportPayload): Promise<Blob> {
   parts.push(`<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="100"/></w:pPr>${simpleDocxRun(municipality,true)}</w:p>`);
   parts.push(`<w:p><w:pPr><w:jc w:val="center"/></w:pPr>${simpleDocxRun(payload.title,true)}</w:p>`);
   if(payload.subtitle) parts.push(`<w:p><w:pPr><w:jc w:val="center"/></w:pPr>${simpleDocxRun(payload.subtitle)}</w:p>`);
-  if(payload.summary?.length){ parts.push(`<w:p>${simpleDocxRun("SUMMARY",true)}</w:p>`); parts.push(simpleDocxTable([{key:"label",label:"Indicator"},{key:"value",label:"Count / Value"},{key:"percentage",label:"Percentage"}], payload.summary.map(s=>({label:s.label,value:s.value,percentage:s.percentage==null?"":`${s.percentage.toFixed(2)}%`})), payload.summary.length)); }
+  if(payload.summary?.length){ parts.push(`<w:p>${simpleDocxRun("SUMMARY",true)}</w:p>`); parts.push(simpleDocxTable([{key:"label",label:"Indicator"},{key:"value",label:"Count / Value"},{key:"percentage",label:"Percentage Rate / Population"}], payload.summary.map(s=>({label:s.label,value:s.value,percentage:s.percentage==null?"":`${s.percentage.toFixed(2)}%`})), payload.summary.length)); }
   if(payload.barangaySummaryColumns?.length && payload.barangaySummaryRows?.length){ parts.push(`<w:p>${simpleDocxRun("BY BARANGAY SUMMARY",true)}</w:p>`); parts.push(simpleDocxTable(payload.barangaySummaryColumns,payload.barangaySummaryRows)); }
   const groups=payload.groups?.length?payload.groups:[{title:"Report",rows:payload.rows}];
   for(const g of groups){ parts.push(`<w:p><w:pPr><w:pageBreakBefore/></w:pPr>${simpleDocxRun(`Barangay: ${g.title}`,true)}</w:p>`); parts.push(simpleDocxTable(payload.columns,g.rows)); }
+  parts.push(`<w:p><w:pPr><w:spacing w:before="160"/></w:pPr>${simpleDocxRun(`Source: ${getSourceWatermark(resolveExportYear(payload.title,payload.subtitle,payload.dataYear))}`)}</w:p>`);
   const docXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${parts.join("")}<w:sectPr><w:pgSz w:w="12240" w:h="18720"/><w:pgMar w:top="720" w:right="900" w:bottom="720" w:left="900"/></w:sectPr></w:body></w:document>`;
   const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`;
   const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
@@ -553,7 +565,7 @@ async function buildGenericDocx(payload: GroupedExportPayload): Promise<Blob> {
   return await zw.close();
 }
 export async function exportDOCX(payload: GroupedExportPayload) {
-  const doc=makeDocId(payload.title, payload.subtitle); const blob=await buildGenericDocx(payload); const inner=`${doc.base}.docx`;
+  const doc=makeDocId(payload.title, payload.subtitle, payload.dataYear); const blob=await buildGenericDocx(payload); const inner=`${doc.base}.docx`;
   await packageProtected(inner, blob, {format:"DOCX", title:payload.title, rowCount:payload.rows.length, doc});
 }
 
@@ -563,15 +575,15 @@ export function printPayload(payload: GroupedExportPayload) {
 }
 
 export async function exportPDF(payload: GroupedExportPayload) {
-  const { title, subtitle, columns, rows, note, summary, barangaySummaryColumns, barangaySummaryRows, groups } = payload;
-  const docId = makeDocId(title, subtitle);
+  const { title, subtitle, columns, rows, note, summary, barangaySummaryColumns, barangaySummaryRows, groups, dataYear } = payload;
+  const docId = makeDocId(title, subtitle, dataYear);
   const FOLIO_WIDTH_MM = 215.9;
   const FOLIO_HEIGHT_MM = 330.2;
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: [FOLIO_WIDTH_MM, FOLIO_HEIGHT_MM] });
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
   const margin = 14;
-  const source = pdfPeso(note || getSourceWatermark());
+  const source = pdfPeso(note || getSourceWatermark(docId.year));
   const usableWidth = pageWidth - margin * 2;
 
   const drawReportHeader = (sectionTitle?: string, continuation = false) => {
@@ -603,7 +615,7 @@ export async function exportPDF(payload: GroupedExportPayload) {
   if (summary?.length) {
     autoTable(pdf, {
       startY: y,
-      head: [["Summary", "Count / Value", "Percentage / Rate"]],
+      head: [["Summary", "Count / Value", "Percentage Rate (%Rate) / Population (%Population)"]],
       body: summary.map((item) => [
         pdfPeso(String(item.label)),
         typeof item.value === "number" ? item.value.toLocaleString() : pdfPeso(String(item.value)),

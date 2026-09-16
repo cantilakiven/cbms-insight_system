@@ -77,6 +77,7 @@ function CompendiumPage() {
             columns: table.columns,
             rows: table.rows,
             note: table.note,
+            dataYear: year,
           });
         }
       }
@@ -85,7 +86,7 @@ function CompendiumPage() {
   const downloadAllCsv = () => { if (!book) return; return run(async () => {
       for (const section of book.sections) {
         for (const table of section.tables) {
-          await exportCSV({ title: table.title, columns: table.columns, rows: table.rows, note: table.note });
+          await exportCSV({ title: table.title, columns: table.columns, rows: table.rows, note: table.note, dataYear: year });
         }
       }
     }); }
@@ -265,13 +266,13 @@ function CompendiumPage() {
                   <span className="flex items-center gap-3">
                     <span className="text-xs text-muted-foreground">{t.rows.length.toLocaleString()} rows</span>
                     <button
-                      onClick={() => run(() => exportXLSX({ title: t.title, subtitle: book.subtitle, columns: t.columns, rows: t.rows, note: t.note }))}
+                      onClick={() => run(() => exportXLSX({ title: t.title, subtitle: book.subtitle, columns: t.columns, rows: t.rows, note: t.note, dataYear: year }))}
                       className="rounded-md border border-border px-2.5 py-1 text-xs font-semibold transition hover:bg-muted"
                     >
                       Excel
                     </button>
                     <button
-                      onClick={() => run(() => exportCSV({ title: t.title, columns: t.columns, rows: t.rows, note: t.note }))}
+                      onClick={() => run(() => exportCSV({ title: t.title, columns: t.columns, rows: t.rows, note: t.note, dataYear: year }))}
                       className="rounded-md border border-border px-2.5 py-1 text-xs font-semibold transition hover:bg-muted"
                     >
                       CSV

@@ -464,6 +464,10 @@ const AGG_KINDS: AggKind[] = [
   "food_frequency_daily_by_brgy",
   "food_frequency_weekly_by_brgy",
   "skipped_meal_by_brgy",
+  "farming_household_by_brgy",
+  "farming_poverty_by_brgy",
+  "agri_employment_by_brgy",
+  "agri_income_by_brgy",
 ];
 
 const SECTOR_TABS: { id: TabId; label: string }[] = [
@@ -472,6 +476,10 @@ const SECTOR_TABS: { id: TabId; label: string }[] = [
   { id: "persons_income_by_brgy", label: "Persons by Household Income" },
   { id: "food_under_three_by_brgy", label: "Households Eating Less Than 3 Meals a Day" },
   { id: "skipped_meal_by_brgy", label: "Households That Skipped a Meal" },
+  { id: "farming_household_by_brgy", label: "Farming & Non-Farming Households by Barangay" },
+  { id: "farming_poverty_by_brgy", label: "Farming Household Poverty / Low-Income by Barangay" },
+  { id: "agri_employment_by_brgy", label: "Agricultural vs Non-Agricultural Employment by Barangay" },
+  { id: "agri_income_by_brgy", label: "Agricultural Household Income by Barangay" },
   { id: "pantawid_by_brgy", label: "Pantawid (4Ps) by Barangay" },
   { id: "non_pantawid_by_brgy", label: "Non-Pantawid by Barangay" },
   { id: "employed_by_brgy", label: "Employed by Barangay" },
@@ -571,11 +579,13 @@ function SectorsPage() {
                   const groups = [
                     ["priority", "Priority & Protection"],
                     ["livelihood", "Employment & Livelihood"],
+                    ["agriculture", "Agriculture & Rural Livelihood"],
                     ["education", "Education"],
                   ] as const;
                   const currentId = String(activeTab);
                   const groupFor = (id: string) =>
                     /^(pwd|fourps|not_fourps|pantawid|non_pantawid|senior|solo|socpen|.*income|.*pwd|food_frequency|skipped_meal)/.test(id) ? "priority" :
+                    /^(farming_|agri_)/.test(id) ? "agriculture" :
                     /^(employed|unemployed|in_lf|not_in_lf|farmers|coconut|fisher|basis_of_payment|class_of_worker)/.test(id) ? "livelihood" :
                     /^(edu_|early_childhood)/.test(id) ? "education" : "priority";
                   const [firstGroup] = groups;
@@ -614,6 +624,7 @@ function SectorsPage() {
             {(() => {
               const groupFor = (id: string) =>
                 /^(pwd|fourps|not_fourps|pantawid|non_pantawid|senior|solo|socpen|.*income|.*pwd|food_frequency|skipped_meal)/.test(id) ? "priority" :
+                    /^(farming_|agri_)/.test(id) ? "agriculture" :
                 /^(employed|unemployed|in_lf|not_in_lf|farmers|coconut|fisher|basis_of_payment|class_of_worker)/.test(id) ? "livelihood" :
                 /^(edu_|early_childhood)/.test(id) ? "education" : "priority";
               const currentGroup = groupFor(String(activeTab));
@@ -692,7 +703,15 @@ function SectorsPage() {
         </div>
       </section>
 
-      {activeTab === "household_income_below_20k_by_brgy" ? (
+      {activeTab === "farming_household_by_brgy" ? (
+        <AgricultureByBarangay mode="farming_households" onSelect={setSelected} />
+      ) : activeTab === "farming_poverty_by_brgy" ? (
+        <AgricultureByBarangay mode="farming_poverty" onSelect={setSelected} />
+      ) : activeTab === "agri_employment_by_brgy" ? (
+        <AgricultureByBarangay mode="agri_employment" onSelect={setSelected} />
+      ) : activeTab === "agri_income_by_brgy" ? (
+        <AgricultureByBarangay mode="agri_income" onSelect={setSelected} />
+      ) : activeTab === "household_income_below_20k_by_brgy" ? (
         <IncomeByBarangay mode="households" />
       ) : activeTab === "persons_income_by_brgy" ? (
         <IncomeByBarangay mode="persons" />
@@ -1564,6 +1583,249 @@ function VerifyResultCard({ result }: { result: ReturnType<typeof verifySector> 
   );
 }
 
+
+const AGRI_WORK_RE = /\b(farm|farmer|farming|agri|agricultur|crop|rice|corn|coconut|sugar|livestock|poultry|forestry|plantation|nursery|hatchery)\b/i;
+const isAgriculturalWork = (p: any) => {
+  if (yes(p?.e17_farmer)) return true;
+  const occupation = [p?.e05_occupation_group, p?.legacy_occupation_text, p?.e05_psoc].map(low).join(" ");
+  const industry = [p?.e06_industry_group, p?.legacy_industry_text, p?.e06_psic].map(low).join(" ");
+  return AGRI_WORK_RE.test(occupation) || AGRI_WORK_RE.test(industry);
+};
+const isEmployed = (p: any) => {
+  const v = low(p?.e01_employment_status);
+  return v === "employed" || (v.includes("employed") && !v.includes("unemployed") && !v.includes("not employed"));
+};
+const householdIsFarming = (persons: any[], key: string) => persons.some((p) => householdKey(p) === key && isAgriculturalWork(p));
+const agricultureSource = (persons: any[], key: string) => {
+  const p = persons.find((row) => householdKey(row) === key && isAgriculturalWork(row));
+  if (!p) return "Not Stated";
+  return String(p.e06_industry_group || p.e05_occupation_group || p.legacy_industry_text || p.legacy_occupation_text || "Agricultural livelihood").trim() || "Agricultural livelihood";
+};
+const farmingPersonOccupation = (persons: any[], key: string) => {
+  const p = persons.find((row) => householdKey(row) === key && isAgriculturalWork(row));
+  if (!p) return { occupation: "Not Stated", industry: "Not Stated" };
+  return {
+    occupation: String(p.e05_occupation_group || p.legacy_occupation_text || "Not Stated").trim() || "Not Stated",
+    industry: String(p.e06_industry_group || p.legacy_industry_text || "Not Stated").trim() || "Not Stated",
+  };
+};
+
+type AgricultureMode = "farming_households" | "farming_poverty" | "agri_employment" | "agri_income";
+
+function AgricultureByBarangay({ mode, onSelect }: { mode: AgricultureMode; onSelect: (p: any) => void }) {
+  const year = getActiveYear();
+  const ds = getYearDatasets(year);
+  const barangays = getSectorBarangays(year);
+  const personByHousehold = useMemo(() => {
+    const m = new Map<string, any[]>();
+    for (const p of ds.persons) {
+      const key = householdKey(p);
+      if (!m.has(key)) m.set(key, []);
+      m.get(key)!.push(p);
+    }
+    return m;
+  }, [ds.persons, year]);
+  const householdInfo = useMemo(() => {
+    const m = new Map<string, { household: any; farming: boolean; income: number | null; head: any | null; source: string }>();
+    for (const h of ds.households) {
+      const key = householdKey(h);
+      const people = personByHousehold.get(key) || [];
+      const head = people.find((p) => isHead(p)) || people[0] || null;
+      const rawIncome = Number(h?.h06_total_family_income);
+      const income = Number.isFinite(rawIncome) && h?.h06_total_family_income !== "" ? rawIncome : null;
+      m.set(key, { household: h, farming: householdIsFarming(people, key), income, head, source: agricultureSource(people, key) });
+    }
+    return m;
+  }, [ds.households, personByHousehold]);
+
+  const model = useMemo(() => {
+    const groups = new Map<string, any[]>();
+    for (const b of barangays) groups.set(b, []);
+    const byBarangaySummary: any[] = [];
+    const add = (b: string, row: any) => { if (!groups.has(b)) groups.set(b, []); groups.get(b)!.push(row); };
+
+    if (mode === "farming_households") {
+      const allHouseholds = ds.households;
+      const farmingHouseholds = allHouseholds.filter((h) => householdInfo.get(hhKeySafe(h))?.farming);
+      const farmingHouseholdKeys = new Set(farmingHouseholds.map((h) => householdKey(h)));
+      const peopleRows = ds.persons.map((p) => {
+        const key = householdKey(p); const info = householdInfo.get(key); const farming = Boolean(info?.farming);
+        return { ...p, _full_name: getPersonFullName(p) || "Not Stated", livelihood: farming ? "Farming Household" : "Non-Farming Household", _household_head: info?.head ? getPersonFullName(info.head) : "Not Stated" };
+      });
+      for (const row of peopleRows) add(row.area_name || "Not Stated", row);
+      const farmingPop = peopleRows.filter((p) => farmingHouseholdKeys.has(householdKey(p))).length;
+      const totalPop = peopleRows.length;
+      const farmingCount = farmingHouseholds.length;
+      const totalHh = allHouseholds.length;
+      const summary = [
+        { label: "Farming Households", value: farmingCount, percentage: totalHh ? shareOf(farmingCount, totalHh) : null, percentageLabel: "Farming households ÷ total households" },
+        { label: "Non-Farming Households", value: Math.max(0, totalHh - farmingCount), percentage: totalHh ? shareOf(totalHh - farmingCount, totalHh) : null, percentageLabel: "Non-farming households ÷ total households" },
+        { label: "Farming-Household Population", value: farmingPop, percentage: totalPop ? shareOf(farmingPop, totalPop) : null, percentageLabel: "Persons in farming households ÷ total population" },
+        { label: "Non-Farming-Household Population", value: Math.max(0, totalPop - farmingPop), percentage: totalPop ? shareOf(totalPop - farmingPop, totalPop) : null, percentageLabel: "Persons in non-farming households ÷ total population" },
+        { label: "Total Households", value: totalHh },
+        { label: "Total Population", value: totalPop },
+        { label: "No. of Barangay", value: barangays.length },
+      ];
+      for (const b of barangays) {
+        const hs = allHouseholds.filter((h) => (h.area_name || "Not Stated") === b);
+        const f = hs.filter((h) => householdInfo.get(hhKeySafe(h))?.farming).length;
+        const ps = peopleRows.filter((p) => (p.area_name || "Not Stated") === b);
+        const fp = ps.filter((p) => p.livelihood === "Farming Household").length;
+        byBarangaySummary.push({ barangay: b, farming_households: f, non_farming_households: hs.length - f, total_households: hs.length, farming_population: fp, non_farming_population: ps.length - fp, total_population: ps.length, population_rate: ps.length ? `${(fp / ps.length * 100).toFixed(2)}%` : "0.00%" });
+      }
+      return {
+        groups, summary, byBarangaySummary,
+        columns: [
+          { key: "_full_name", label: "Full Name" },
+          { key: "a03_sex", label: "Sex" },
+          { key: "a05_age", label: "Age" },
+          { key: "livelihood", label: "Household Livelihood" },
+          { key: "_household_head", label: "Household Head" },
+        ],
+        title: `Farming & Non-Farming Households by Barangay — CBMS ${year}`,
+        subtitle: "Households are classified as farming when at least one household member has a normalized farmer/agricultural occupation or industry indicator.",
+        note: `Method: Farming household = household with at least one member classified as agricultural/farming. Non-farming = all other households. Source: Municipal Planning and Development Office · CBMS ${year} dataset · Municipality of Mutia, Zamboanga del Norte`,
+      };
+    }
+
+    if (mode === "farming_poverty" || mode === "agri_income") {
+      const farmingHouseholds = ds.households.filter((h) => householdInfo.get(hhKeySafe(h))?.farming);
+      const reported = farmingHouseholds.filter((h) => householdInfo.get(hhKeySafe(h))?.income !== null);
+      const lowIncome = reported.filter((h) => (householdInfo.get(hhKeySafe(h))!.income as number) < 20000);
+      for (const h of farmingHouseholds) {
+        const info = householdInfo.get(hhKeySafe(h))!;
+        if (mode === "farming_poverty" && info.income === null) continue;
+        const head = info.head;
+        const source = farmingPersonOccupation(personByHousehold.get(hhKeySafe(h)) || [], hhKeySafe(h));
+        add(h.area_name || "Not Stated", {
+          ...h,
+          _full_name: head ? getPersonFullName(head) : "Not Stated",
+          _household_head: head ? getPersonFullName(head) : "Not Stated",
+          _household_income: info.income,
+          _income_status: info.income === null ? "Not Reported" : info.income < 20000 ? "Below ₱20,000" : "₱20,000 and Above",
+          _agriculture_source: info.source,
+          _agri_occupation: source.occupation,
+          _agri_industry: source.industry,
+        });
+      }
+      for (const b of barangays) {
+        const bh = farmingHouseholds.filter((h) => (h.area_name || "Not Stated") === b);
+        const br = bh.filter((h) => householdInfo.get(hhKeySafe(h))?.income !== null);
+        const bl = br.filter((h) => (householdInfo.get(hhKeySafe(h))!.income as number) < 20000);
+        const incomes = br.map((h) => householdInfo.get(hhKeySafe(h))!.income as number);
+        const avg = incomes.length ? incomes.reduce((a, x) => a + x, 0) / incomes.length : null;
+        byBarangaySummary.push(mode === "farming_poverty"
+          ? { barangay: b, farming_households: bh.length, reported_income: br.length, below_20k: bl.length, poverty_proxy_rate: br.length ? `${(bl.length / br.length * 100).toFixed(2)}%` : "N/A", magnitude: bl.length }
+          : { barangay: b, farming_households: bh.length, reported_income: br.length, average_income: avg === null ? "N/A" : `₱${avg.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, below_20k: bl.length, below_20k_rate: br.length ? `${(bl.length / br.length * 100).toFixed(2)}%` : "N/A" });
+      }
+      if (mode === "farming_poverty") {
+        return {
+          groups, summary: [
+            { label: "Farming Households", value: farmingHouseholds.length },
+            { label: "Farming Households with Reported Income", value: reported.length, percentage: farmingHouseholds.length ? shareOf(reported.length, farmingHouseholds.length) : null, percentageLabel: "Reported income ÷ farming households" },
+            { label: "Farming Households Below ₱20,000", value: lowIncome.length, percentage: reported.length ? shareOf(lowIncome.length, reported.length) : null, percentageLabel: "Low-income farming households ÷ reported-income farming households" },
+            { label: "Magnitude of Low-Income Farming Households", value: lowIncome.length },
+            { label: "No. of Barangay", value: barangays.length },
+          ],
+          byBarangaySummary,
+          columns: [
+            { key: "_full_name", label: "Household Head" },
+            { key: "area_name", label: "Barangay" },
+            { key: "_household_income", label: "Household Income" },
+            { key: "_income_status", label: "Income Status" },
+            { key: "_agriculture_source", label: "Agricultural Income Source / Industry" },
+          ],
+          title: `Farming Household Poverty / Low-Income Proxy by Barangay — CBMS ${year}`,
+          subtitle: "Income-based proxy only: reported farming-household family income below ₱20,000. This is not an official PSA poverty-line classification.",
+          note: `Method: Magnitude = count of farming households with reported H06 Total Family Income below ₱20,000. Incidence / rate = magnitude ÷ farming households with reported income × 100. Source: Municipal Planning and Development Office · CBMS ${year} dataset · Municipality of Mutia, Zamboanga del Norte`,
+        };
+      }
+      const incomes = reported.map((h) => householdInfo.get(hhKeySafe(h))!.income as number).sort((a,b)=>a-b);
+      const median = incomes.length ? (incomes.length % 2 ? incomes[(incomes.length-1)/2] : (incomes[incomes.length/2-1] + incomes[incomes.length/2])/2) : null;
+      const avg = incomes.length ? incomes.reduce((a,x)=>a+x,0)/incomes.length : null;
+      return {
+        groups, summary: [
+          { label: "Farming Households", value: farmingHouseholds.length },
+          { label: "Reported Farming-Household Income", value: reported.length, percentage: farmingHouseholds.length ? shareOf(reported.length, farmingHouseholds.length) : null, percentageLabel: "Reported income ÷ farming households" },
+          { label: "Average Reported Family Income", value: avg === null ? "N/A" : `₱${avg.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, percentageLabel: "Arithmetic mean of reported farming-household family income" },
+          { label: "Median Reported Family Income", value: median === null ? "N/A" : `₱${median.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, percentageLabel: "Median of reported farming-household family income" },
+          { label: "Below ₱20,000", value: lowIncome.length, percentage: reported.length ? shareOf(lowIncome.length, reported.length) : null, percentageLabel: "Below ₱20,000 ÷ reported farming-household income" },
+          { label: "No. of Barangay", value: barangays.length },
+        ],
+        byBarangaySummary, columns: [
+          { key: "_full_name", label: "Household Head" },
+          { key: "area_name", label: "Barangay" },
+          { key: "_household_income", label: "Household Income" },
+          { key: "_agriculture_source", label: "Agricultural Source / Industry" },
+          { key: "_agri_occupation", label: "Agricultural Occupation" },
+        ], title: `Agricultural Household Income by Barangay — CBMS ${year}`,
+        subtitle: "Average and median income are calculated only from farming households with numeric reported family income.",
+        note: `Method: Average = sum of reported farming-household H06 Total Family Income ÷ number of farming households with reported income. Median = middle value after sorting reported incomes. Source: Municipal Planning and Development Office · CBMS ${year} dataset · Municipality of Mutia, Zamboanga del Norte`,
+      };
+    }
+
+    const employed = ds.persons.filter((p) => ageOf(p) !== null && (ageOf(p) as number) >= 15 && isEmployed(p));
+    let agri = 0, nonAgri = 0, notStated = 0;
+    for (const p of employed) {
+      const category = isAgriculturalWork(p) ? "Agricultural Job" : ((p.e05_occupation_group || p.e06_industry_group || p.legacy_occupation_text || p.legacy_industry_text) ? "Non-Agricultural Job" : "Not Stated");
+      if (category === "Agricultural Job") agri++; else if (category === "Non-Agricultural Job") nonAgri++; else notStated++;
+      add(p.area_name || "Not Stated", { ...p, _full_name: getPersonFullName(p) || "Not Stated", job_type: category, occupation: p.e05_occupation_group || p.legacy_occupation_text || "Not Stated", industry: p.e06_industry_group || p.legacy_industry_text || "Not Stated" });
+    }
+    const labor = ds.persons.filter((p) => ageOf(p) !== null && (ageOf(p) as number) >= 15 && low(p.e01_labor_force_participation).includes("labor force")).length || employed.length;
+    for (const b of barangays) {
+      const list = groups.get(b) || [];
+      const aa = list.filter((r) => r.job_type === "Agricultural Job").length;
+      const na = list.filter((r) => r.job_type === "Non-Agricultural Job").length;
+      const ns = list.filter((r) => r.job_type === "Not Stated").length;
+      byBarangaySummary.push({ barangay: b, agricultural_jobs: aa, non_agricultural_jobs: na, not_stated: ns, employed: list.length, agricultural_employment_rate: list.length ? `${(aa / list.length * 100).toFixed(2)}%` : "0.00%" });
+    }
+    return {
+      groups, byBarangaySummary, summary: [
+        { label: "Agricultural Jobs", value: agri, percentage: employed.length ? shareOf(agri, employed.length) : null, percentageLabel: "Agricultural jobs ÷ employed persons aged 15+" },
+        { label: "Non-Agricultural Jobs", value: nonAgri, percentage: employed.length ? shareOf(nonAgri, employed.length) : null, percentageLabel: "Non-agricultural jobs ÷ employed persons aged 15+" },
+        { label: "Not Stated", value: notStated, percentage: employed.length ? shareOf(notStated, employed.length) : null, percentageLabel: "Not stated occupation/industry ÷ employed persons aged 15+" },
+        { label: "Total Employed (15+)", value: employed.length },
+        { label: "Agricultural Employment Rate vs Labor Force", value: labor ? `${agri.toLocaleString()} / ${labor.toLocaleString()}` : "N/A", percentage: labor ? shareOf(agri, labor) : null, percentageLabel: "Agricultural employed ÷ labor-force population aged 15+" },
+        { label: "No. of Barangay", value: barangays.length },
+      ],
+      columns: [
+        { key: "_full_name", label: "Full Name" }, { key: "area_name", label: "Barangay" }, { key: "a03_sex", label: "Sex" }, { key: "a05_age", label: "Age" },
+        { key: "job_type", label: "Job Type" }, { key: "occupation", label: "Occupation" }, { key: "industry", label: "Industry" },
+      ],
+      title: `Agricultural vs Non-Agricultural Employment by Barangay — CBMS ${year}`,
+      subtitle: "Persons aged 15+ classified from employment status, occupation, and industry fields. Agricultural jobs are identified from normalized farmer/agricultural indicators and agriculture-related occupation/industry text.",
+      note: `Method: Agricultural job classification uses normalized e17_farmer plus agriculture-related occupation/industry terms; agricultural employment rate = agricultural employed ÷ labor-force population aged 15+ × 100. Source: Municipal Planning and Development Office · CBMS ${year} dataset · Municipality of Mutia, Zamboanga del Norte`,
+    };
+  }, [mode, year, ds.persons, ds.households, barangays, householdInfo, personByHousehold]);
+
+  const sortedBarangays = useMemo(() => Array.from(model.groups.keys()).sort(sortNamesAZ), [model.groups]);
+  const detailGroups = useMemo(() => {
+    return new Map(sortedBarangays.map((b) => [b, (model.groups.get(b) || []).slice().sort((a,b) => sortNamesAZ(a._full_name || a._household_head || "", b._full_name || b._household_head || ""))]));
+  }, [model.groups, sortedBarangays]);
+  const exportPayload: GroupedExportPayload = {
+    title: model.title, subtitle: model.subtitle, columns: model.columns as ExportColumn[], rows: Array.from(detailGroups.values()).flat(),
+    summary: model.summary as SectorSummaryItem[], barangaySummaryColumns: Object.keys(model.byBarangaySummary[0] || {}).map((key) => ({ key, label: key.replace(/_/g," ").replace(/\b\w/g,(c)=>c.toUpperCase()) })),
+    barangaySummaryRows: model.byBarangaySummary, groups: sortedBarangays.map((b) => ({ title: b, rows: detailGroups.get(b) || [] })), note: model.note, dataYear: year,
+  };
+
+  return <div className="space-y-6">
+    <section className="rounded-xl border border-border bg-card shadow-[var(--shadow-card)]">
+      <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-start sm:justify-between">
+        <div><div className="text-[10px] font-black uppercase tracking-[0.16em] text-primary">Agriculture & Rural Livelihood</div><h2 className="mt-1 font-display text-lg font-semibold">{model.title.replace(` — CBMS ${year}`, "")}</h2><p className="mt-1 text-sm text-muted-foreground">{model.subtitle}</p></div>
+        <SectorExportActions title={model.title} subtitle={model.subtitle} columns={model.columns as ExportColumn[]} rows={exportPayload.rows} summary={model.summary as SectorSummaryItem[]} groups={detailGroups} exportDetailColumns={model.columns as ExportColumn[]} />
+      </div>
+      <div className="sector-summary-table-wrap"><table className="w-full border-collapse text-sm"><thead className="bg-secondary/70"><tr><th className="border-b border-border px-4 py-2.5 text-left font-semibold">Indicator</th><th className="border-b border-border px-4 py-2.5 text-right font-semibold">Count / Value</th><th className="border-b border-border px-4 py-2.5 text-right font-semibold">Percentage Rate (%Rate) / Population (%Population)</th><th className="hidden border-b border-border px-4 py-2.5 text-left font-semibold md:table-cell">Method / Interpretation</th></tr></thead><tbody>{(model.summary as SectorSummaryItem[]).map((item) => <tr key={item.label} className="border-b border-border/60 last:border-0"><td className="px-4 py-2.5 font-semibold">{item.label}</td><td className="px-4 py-2.5 text-right font-black tabular-nums">{typeof item.value === "number" ? item.value.toLocaleString() : String(item.value)}</td><td className="px-4 py-2.5 text-right">{item.percentage == null ? "—" : <span className="rounded-full bg-primary/10 px-2 py-1 text-[11px] font-black text-primary">{item.percentage.toFixed(2)}%</span>}</td><td className="hidden px-4 py-2.5 text-xs text-muted-foreground md:table-cell">{item.percentageLabel || "—"}</td></tr>)}</tbody></table></div>
+    </section>
+
+    <section className="rounded-xl border border-border bg-card shadow-[var(--shadow-card)]"><div className="border-b border-border p-4"><h3 className="font-display text-base font-bold">By Barangay Summary</h3><p className="text-xs text-muted-foreground">Barangays are sorted A–Z. Numeric rates use the denominator stated in the column label and method note.</p></div><DataTable rows={model.byBarangaySummary} columns={Object.keys(model.byBarangaySummary[0] || {}).map((key) => ({ key, label: key.replace(/_/g," ").replace(/\b\w/g,(c)=>c.toUpperCase()) }))} searchable pageSize={50} hideExport /></section>
+
+    <div className="space-y-5">
+      {sortedBarangays.map((b) => <BarangayNameTable key={b} barangay={b} rows={detailGroups.get(b) || []} columns={model.columns} entityLabel={mode === "farming_households" ? "Person(s) in farming/non-farming households" : mode === "agri_employment" ? "Employed person(s)" : "Farming household(s)"} onSelect={(mode === "farming_households" || mode === "agri_employment") ? onSelect : undefined} />)}
+    </div>
+    <div className="rounded-xl border border-dashed border-border bg-muted/20 p-4 text-xs leading-5 text-muted-foreground">{model.note}</div>
+  </div>;
+}
+
 function IncomeByBarangay({ mode }: { mode: "households" | "persons" }) {
   const year = getActiveYear();
   const globalBarangay = getActiveBarangay();
@@ -2100,6 +2362,7 @@ function SectorExportActions({
     barangaySummaryRows: exportModel.barangaySummaryRows,
     groups: exportModel.groups,
     note: `Complete CBMS sector report · ${subtitle || "All Barangays"}`,
+    dataYear: getActiveYear(),
   };
 
   return (
@@ -2155,7 +2418,7 @@ function SectorSummaryTable({
             <tr>
               <th className="border-b border-border px-4 py-2.5 text-left font-semibold">Indicator</th>
               <th className="border-b border-border px-4 py-2.5 text-right font-semibold">Count / Value</th>
-              <th className="border-b border-border px-4 py-2.5 text-right font-semibold">Population % / Rate</th>
+              <th className="border-b border-border px-4 py-2.5 text-right font-semibold">Percentage Rate (%Rate) / Population (%Population)</th>
               <th className="hidden border-b border-border px-4 py-2.5 text-left font-semibold md:table-cell">Interpretation</th>
             </tr>
           </thead>

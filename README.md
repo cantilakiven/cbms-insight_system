@@ -121,3 +121,31 @@ npm run electron:build
 
 For GitHub Releases, create a matching `v<version>` tag and let `.github/workflows/release.yml` publish the Windows installer and updater metadata.
 
+## GitHub Releases and automatic updates
+
+The Windows build uses `electron-updater` with the GitHub provider. The packaged NSIS target is the auto-updatable Windows target, and electron-builder publishes the installer together with `latest.yml` update metadata to the configured GitHub release.
+
+### First release
+
+1. Confirm the version in `package.json`, for example `1.2.0`.
+2. Commit and push the code to `main`.
+3. Create the matching tag: `git tag v1.2.0`.
+4. Push the tag: `git push origin v1.2.0`.
+5. GitHub Actions runs `.github/workflows/release.yml`, builds the web application, builds the Windows NSIS installer, checks that `.exe` and `latest.yml` exist, and publishes them to the GitHub Release.
+
+### Future updates
+
+For every update, increment `package.json` first, for example `1.2.1`, `1.3.0`, or `2.0.0`, then create and push the matching tag (`v1.2.1`, `v1.3.0`, or `v2.0.0`). Installed coworkers' copies of the packaged application check for GitHub updates while running and download a newer release automatically.
+
+The application intentionally does not update while launched with `npm run electron:dev`; auto-update is enabled only for packaged installations.
+
+### Release assets that must exist
+
+A successful Windows release should contain the NSIS installer (`.exe`), `latest.yml`, and the related blockmap asset. Do not manually rename these files because the updater uses the metadata to locate and verify the correct package.
+
+### Repository configuration
+
+The application is configured for `cantilakiven/cbms-mutia_system` in `package.json`. GitHub Actions uses the repository-provided `GITHUB_TOKEN` with `contents: write`; no personal access token is required by the release workflow.
+
+See `docs/AUTO_UPDATE_GITHUB.md` for the full release checklist and troubleshooting.
+

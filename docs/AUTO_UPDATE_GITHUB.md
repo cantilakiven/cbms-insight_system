@@ -1,135 +1,65 @@
-# MutiaLytics automatic updates with GitHub Releases
+# MutiaLytics GitHub Auto-Update Guide
 
-This project uses `electron-updater` with the GitHub provider. Installed copies of the packaged application check GitHub for a newer release when they start and every 30 minutes while running. When a newer release is found, it downloads automatically. After the download finishes, the user is asked whether to restart immediately; choosing Later installs it automatically the next time the application closes.
+This project is configured for Windows NSIS releases through GitHub Releases and `electron-updater`. The packaged desktop application checks for newer releases automatically; development mode does not perform update checks.
 
-## Important: development vs packaged application
-
-Auto-update is intentionally disabled during `npm run electron:dev`. It only runs in the packaged installer/application. This avoids development sessions trying to update from GitHub.
-
-## GitHub repository
-
-The project is configured for:
+## Repository
 
 `https://github.com/cantilakiven/cbms-mutia_system`
 
-The repository and owner are explicitly configured in `package.json`, so the update feed does not depend on whatever Git remote happens to be on a developer's PC.
+The publish provider is configured in `package.json` under `build.publish`.
 
-## Free GitHub setup
+## Release flow
 
-The simplest free arrangement is a **public GitHub repository** using GitHub Releases. GitHub states that release assets can be distributed without a total-release-size or bandwidth cap, although individual files are limited to 2 GiB. GitHub Actions standard runners are free for public repositories. See the linked GitHub documentation in the project README.
-
-If the source code must remain private, do not publish a private GitHub update feed for ordinary coworker installations without additional authentication planning. The simplest no-cost deployment model is a public release repository that contains the installer artifacts.
-
-## First-time setup
-
-1. Create the repository `cantilakiven/cbms-mutia_system` on GitHub.
-2. Push this project to the `main` branch.
-3. In GitHub, open **Settings → Actions → General** and allow GitHub Actions.
-4. Confirm the repository's **Actions permissions** allow workflows to run and create releases.
-5. The included workflow is `.github/workflows/release.yml`.
-6. The workflow uses GitHub's built-in `GITHUB_TOKEN`; you do **not** need to paste a personal access token into the source repository.
-
-The workflow has `contents: write` permission so it can publish the installer and updater metadata to GitHub Releases.
-
-## Publish the first release
-
-Change the version in `package.json`, for example:
-
-```json
-"version": "1.1.0"
-```
-
-Commit the change and push it:
+1. Make and test your code changes.
+2. Update `package.json` version. Do not reuse an already-published version.
+3. Commit and push the changes to `main`.
+4. Create a matching semantic tag, for example:
 
 ```powershell
-git add package.json
-
-git commit -m "release: 1.1.0"
-
-git push origin main
+git tag v1.2.1
+git push origin v1.2.1
 ```
 
-Then create and push the matching tag:
+5. GitHub Actions runs `.github/workflows/release.yml`.
+6. The workflow installs dependencies, verifies the tag/version match, runs `npm run build`, runs electron-builder for Windows NSIS, verifies the generated installer metadata, and publishes the release.
 
-```powershell
-git tag v1.1.0
-git push origin v1.1.0
-```
+## Why `latest.yml` matters
 
-GitHub Actions will run the Windows build and publish the installer and updater metadata to the GitHub release for `v1.1.0`.
+`electron-updater` needs the generated update metadata (`latest.yml`) alongside the Windows installer. Do not upload only the `.exe`; a release without `latest.yml` will not provide a complete updater feed.
 
-## Publish later updates
+## What coworkers do
 
-For every update:
+They install the published NSIS `.exe` once. Later, when a newer tagged GitHub release is published, the packaged application checks for it automatically, downloads it, and offers **Restart Now** or **Later**. If they choose Later, the update is installed on the next application close.
 
-1. Fix the code.
-2. Increase `package.json` version, for example `1.1.1` or `1.2.0`.
-3. Commit and push to `main`.
-4. Create a matching tag: `v1.1.1` or `v1.2.0`.
-5. Push the tag.
-6. Wait for the **Build and Release MutiaLytics** workflow to finish.
+## Important version rule
 
-Example:
-
-```powershell
-git add .
-git commit -m "release: 1.1.1"
-git push origin main
-
-git tag v1.1.1
-git push origin v1.1.1
-```
-
-Do not reuse an old version number. Installed applications only accept releases that are newer according to semantic version comparison.
-
-## What coworkers need to do
-
-They install the current MutiaLytics Windows installer once.
-
-After that they do **not** need to download every new installer manually. The packaged application checks the configured GitHub Releases feed, downloads newer versions, and installs them when the application restarts.
-
-Their PCs do not need Node.js, Git, or GitHub accounts for the updater to work.
-
-## What the GitHub release should contain
-
-For a Windows x64 release, electron-builder normally uploads:
-
-- the NSIS installer (`.exe`)
-- `latest.yml`
-- the update blockmap (`.blockmap`)
-
-The updater reads the release metadata and downloads the new installer automatically.
-
-## Testing the updater safely
-
-Do not test auto-update with two builds that have the same version.
-
-Use a sequence such as:
+These two values must match:
 
 ```text
-1. Build/install 1.1.0
-2. Publish 1.1.1
-3. Start the installed 1.1.0 application
-4. Wait for the update check
-5. Let it download 1.1.1
-6. Restart when prompted
-7. Confirm Help/About or the application version shows 1.1.1
+package.json      1.2.1
+Git tag            v1.2.1
 ```
 
-For a quick test, the updater waits about 10 seconds after startup before its first check, then checks every 30 minutes.
+The workflow stops the release if they do not match.
 
-## Security note
+## Manual GitHub release alternative
 
-GitHub Releases are transport-secured over HTTPS, and electron-updater performs update verification appropriate to the packaged target. For production Windows deployment, code-signing the installer is strongly recommended because unsigned Windows software can trigger SmartScreen warnings and provides weaker publisher identity. A Windows code-signing certificate is a separate cost from the GitHub hosting/automation workflow.
+You normally do not need to create the release manually. Push the tag and let GitHub Actions publish it. If you create releases manually, keep the generated `.exe`, `latest.yml`, and `.blockmap` together as release assets and preserve their filenames.
 
-Do not put a GitHub Personal Access Token in `main.cjs`, `preload.cjs`, `package.json`, or any repository file. The release workflow uses the temporary `GITHUB_TOKEN` supplied by GitHub Actions.
+## Troubleshooting
 
-## If the GitHub repository name changes
+### The app says no update is available
 
-Update these three places together before publishing a new release:
+Verify that the installed application is a packaged NSIS build, not `npm run electron:dev`, and that the GitHub Release contains a newer version plus `latest.yml`.
 
-1. `package.json` → `repository.url`
-2. `package.json` → `build.publish.owner`
-3. `package.json` → `build.publish.repo`
+### The workflow fails on the version check
 
-Then create a newer application version and publish it.
+Update `package.json` to the exact version represented by the tag, then create a new tag instead of reusing the failed tag.
+
+### The workflow publishes an EXE but no `latest.yml`
+
+Do not distribute that release. Fix the electron-builder build and republish a new version. The included workflow has an explicit artifact check so this should fail the job rather than silently publishing an incomplete updater release.
+
+### Private repository
+
+This configuration is intended for a normal public GitHub release feed. A private GitHub provider requires additional authentication and is not recommended for this deployment pattern.

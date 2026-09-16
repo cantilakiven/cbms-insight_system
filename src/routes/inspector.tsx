@@ -57,7 +57,7 @@ function InspectorPage() {
       <div>
         <h1 className="font-display text-2xl font-bold">Dataset Inspector</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Imported CBMS JSON files, the records loaded from each, and which fields are powering your
+          CBMS source records loaded for the Municipal Planning and Development Office, including the records loaded from each year and which fields are powering your
           PWD, 4Ps, and Food Stamp rosters.
         </p>
       </div>
