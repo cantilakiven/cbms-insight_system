@@ -130,3 +130,8 @@ The workflow uses GitHub Actions' `GITHUB_TOKEN` with `contents: write`. Do not 
 ## 8. Security note about automatic updates
 
 Windows NSIS updates are intended to be signature-verified by `electron-updater` when the application is Authenticode signed. An unsigned application can still be distributed for internal use, but code-signature verification cannot establish publisher identity until a real Windows code-signing certificate is configured. See: https://www.electron.build/docs/win/
+
+
+## In-app update check
+
+The desktop app now shows a **Check updates** control in the top bar. When packaged and connected to the internet it queries the configured GitHub Releases feed. When a newer release is found, the app reports the version and the existing `electron-updater` download process runs in the background. The app also reports download progress and when the update is ready to install.

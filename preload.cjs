@@ -28,3 +28,12 @@ contextBridge.exposeInMainWorld("electronPrint", {
   getPrinters: () => ipcRenderer.invoke("get-printers"),
   printHtml: (html, printerName, options) => ipcRenderer.invoke("print-html", { html, printerName: printerName || "", options: options || {} }),
 });
+
+contextBridge.exposeInMainWorld("electronUpdater", {
+  checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
+  onStatus: (callback) => {
+    const handler = (_, payload) => callback?.(payload);
+    ipcRenderer.on("updater-status", handler);
+    return () => ipcRenderer.removeListener("updater-status", handler);
+  },
+});

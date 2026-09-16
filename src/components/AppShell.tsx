@@ -24,6 +24,10 @@ import {
   X,
   Baby,
   BookOpen,
+  DownloadCloud,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { municipality } from "@/data/cbms";
@@ -42,6 +46,15 @@ import {
   setActiveYear,
   setActiveBarangay,
 } from "@/data/cbms";
+
+declare global {
+  interface Window {
+    electronUpdater?: {
+      checkForUpdates: () => Promise<{ ok: boolean; state?: string; version?: string; currentVersion?: string; message?: string }>;
+      onStatus: (callback: (payload: { state?: string; version?: string; percent?: number; currentVersion?: string; message?: string }) => void) => () => void;
+    };
+  }
+}
 
 const NAV_GROUPS: { label: string; items: { to: string; label: string; icon: any }[] }[] = [
   {
@@ -112,6 +125,8 @@ export function AppShell() {
   });
   const [searchValue, setSearchValue] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [updateState, setUpdateState] = useState<{ state: string; version?: string; percent?: number; message?: string }>({ state: "idle" });
+  const [updateChecking, setUpdateChecking] = useState(false);
   const dataVersion = useSyncExternalStore(subscribeData, getDataVersion, () => 0);
   const activeYear = getActiveYear();
   const activeBarangay = getActiveBarangay();
@@ -146,6 +161,39 @@ export function AppShell() {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
+
+  useEffect(() => {
+    const bridge = window.electronUpdater;
+    if (!bridge) return;
+    const off = bridge.onStatus((payload) => {
+      setUpdateState({
+        state: payload.state || "idle",
+        version: payload.version,
+        percent: payload.percent,
+        message: payload.message,
+      });
+      if (payload.state === "checking") setUpdateChecking(true);
+      else setUpdateChecking(false);
+    });
+    return () => off?.();
+  }, []);
+
+  const checkForUpdates = async () => {
+    if (!window.electronUpdater) {
+      setUpdateState({ state: "unavailable", message: "Update checks are available in the installed desktop application." });
+      return;
+    }
+    setUpdateChecking(true);
+    setUpdateState({ state: "checking" });
+    try {
+      const result = await window.electronUpdater.checkForUpdates();
+      if (!result.ok && result.message) setUpdateState({ state: "error", message: result.message });
+    } catch (error) {
+      setUpdateState({ state: "error", message: error instanceof Error ? error.message : "Unable to check for updates." });
+    } finally {
+      setUpdateChecking(false);
+    }
+  };
 
   const isActive = (to: string) => loc.pathname === to || (to !== "/" && loc.pathname.startsWith(to));
 
@@ -277,6 +325,17 @@ export function AppShell() {
               <ChevronDown className="h-3 w-3 text-muted-foreground" />
             </div>
 
+            <button
+              type="button"
+              onClick={checkForUpdates}
+              className={`relative inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold transition ${updateState.state === "available" || updateState.state === "downloaded" ? "border-primary/30 bg-primary/10 text-primary" : "border-border bg-background text-muted-foreground hover:bg-muted"}`}
+              title={updateState.version ? `Check for updates · ${updateState.version} available` : "Check for updates"}
+              aria-label="Check for updates"
+            >
+              {updateChecking || updateState.state === "downloading" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : updateState.state === "available" || updateState.state === "downloaded" ? <DownloadCloud className="h-3.5 w-3.5" /> : updateState.state === "error" ? <AlertCircle className="h-3.5 w-3.5 text-destructive" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+              <span className="hidden xl:inline">{updateState.state === "available" ? "New update" : updateState.state === "downloaded" ? "Update ready" : updateState.state === "downloading" ? `Updating ${updateState.percent ?? 0}%` : "Check updates"}</span>
+            </button>
+
             <ThemeToggle />
           </div>
         </div>
@@ -311,6 +370,24 @@ export function AppShell() {
           </div>
         </div>
       </header>
+
+      {updateState.state === "available" && (
+        <div className="sticky top-[57px] z-20 flex items-center justify-between gap-3 border-b border-primary/20 bg-primary/8 px-4 py-2 text-xs">
+          <div className="flex min-w-0 items-center gap-2 text-primary">
+            <DownloadCloud className="h-4 w-4 shrink-0" />
+            <span className="truncate font-semibold">A new MutiaLytics update {updateState.version ? `(${updateState.version})` : ""} is available and is downloading in the background.</span>
+          </div>
+          <button type="button" onClick={checkForUpdates} className="shrink-0 rounded-md border border-primary/20 bg-background px-2.5 py-1.5 font-semibold text-primary hover:bg-primary/5">Check now</button>
+        </div>
+      )}
+      {updateState.state === "downloaded" && (
+        <div className="sticky top-[57px] z-20 flex items-center justify-between gap-3 border-b border-emerald-500/20 bg-emerald-500/8 px-4 py-2 text-xs">
+          <div className="flex min-w-0 items-center gap-2 text-emerald-700 dark:text-emerald-400">
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            <span className="truncate font-semibold">Update {updateState.version ? `(${updateState.version}) ` : ""}is downloaded and ready. Restart the application to install it.</span>
+          </div>
+        </div>
+      )}
 
       <main className={`app-main ${sidebarCollapsed ? "app-main-sidebar-collapsed" : ""}`}>
         <div className="page-container mx-auto max-w-[1700px] px-5 py-5 sm:px-7 lg:px-9 lg:py-7 2xl:px-12">

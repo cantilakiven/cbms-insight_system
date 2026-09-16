@@ -187,7 +187,7 @@ export function buildPrintHtml(payload: GroupedExportPayload): string {
       const groupRows = sortRowsForExport(columns, group.rows || []);
       for (let i = 0; i < groupRows.length; i += rowsPerPage) {
         const chunk = groupRows.slice(i, i + rowsPerPage);
-        pages.push(`<section class="print-page">${pageHeader(pages.length + 2, group.title)}<div class="barangay-heading"><div class="kicker">${i ? "Continuation · Barangay" : "Barangay"}</div><h2>${escapePrintHtml(group.title)}</h2><div class="sub">${groupRows.length.toLocaleString()} record(s) · rows ${i + 1}–${Math.min(i + rowsPerPage, groupRows.length)}</div></div>${renderTable(chunk)}</section>`);
+        pages.push(`<section class="print-page">${pageHeader(pages.length + 2)}<div class="barangay-heading"><div class="kicker">${i ? "Continuation · Barangay" : "Barangay"}</div><h2>${escapePrintHtml(group.title)}</h2><div class="sub">${groupRows.length.toLocaleString()} record(s) · rows ${i + 1}–${Math.min(i + rowsPerPage, groupRows.length)}</div></div>${renderTable(chunk)}</section>`);
       }
     }
   }

@@ -470,14 +470,15 @@ ipcMain.handle("print-html", async (event, payload) => {
   // portrait sheet even when the page content is visually landscape. Using the
   // native media size + `landscape: true` gives the driver one unambiguous
   // orientation instruction.
+  // Windows printer drivers are more reliable when landscape is represented by
+  // the actual rotated custom media dimensions instead of relying on Electron's boolean landscape flag. Portrait keeps the native paper dimensions.
   const landscape = requestedOrientation === "landscape";
-  const pageSize = { width: baseSize.width, height: baseSize.height };
-  const orientedWidthMm = landscape ? baseSize.height / 1000 : baseSize.width / 1000;
-  const orientedHeightMm = landscape ? baseSize.width / 1000 : baseSize.height / 1000;
-  // Keep the hidden print document in the native portrait geometry. Electron's
-  // `landscape` option then rotates the complete page at the print pipeline,
-  // while the preview can continue using the already-oriented dimensions.
-  const html = rawHtml.replace(/<\/head>/i, `<style data-cbms-electron-print>@page{size:${baseSize.width / 1000}mm ${baseSize.height / 1000}mm;margin:0}.print-page{width:${baseSize.width / 1000}mm!important;min-width:${baseSize.width / 1000}mm!important;height:${baseSize.height / 1000}mm!important;min-height:${baseSize.height / 1000}mm!important}</style></head>`);
+  const pageSize = landscape
+    ? { width: baseSize.height, height: baseSize.width }
+    : { width: baseSize.width, height: baseSize.height };
+  const orientedWidthMm = pageSize.width / 1000;
+  const orientedHeightMm = pageSize.height / 1000;
+  const html = rawHtml.replace(/<\/head>/i, `<style data-cbms-electron-print>@page{size:${orientedWidthMm}mm ${orientedHeightMm}mm;margin:0}.print-page{width:${orientedWidthMm}mm!important;min-width:${orientedWidthMm}mm!important;height:${orientedHeightMm}mm!important;min-height:${orientedHeightMm}mm!important}</style></head>`);
   if (!html) return { ok: false, error: "No printable report content was supplied." };
 
   const parent = BrowserWindow.fromWebContents(event.sender);
@@ -493,17 +494,15 @@ ipcMain.handle("print-html", async (event, payload) => {
   try {
     await printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
     return await new Promise((resolve) => {
-      // Use the native Windows print dialog for the actual printer job.
-      // Some Windows printer drivers ignore Electron's silent-print orientation
-      // flag and treat the job as portrait. Keeping the selected paper size and
-      // orientation here while allowing the native dialog to negotiate with the
-      // driver makes landscape printing reliable across the full system.
+      // Use the native Windows print dialog. Landscape is represented by
+      // rotated custom media dimensions and an explicit false landscape flag,
+      // preventing drivers from applying a second rotation back to portrait.
       printWindow.webContents.print({
         silent: false,
         deviceName: printerName || undefined,
         printBackground: true,
         color: true,
-        landscape,
+        landscape: false,
         pageSize,
         margins: { marginType: "none" },
       }, (success, failureReason) => {
@@ -595,6 +594,34 @@ async function startServer() {
   return url;
 }
 
+let updaterInterval = null;
+
+function sendUpdaterEvent(channel, payload = {}) {
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (!win.isDestroyed()) {
+      try { win.webContents.send(channel, payload); } catch {}
+    }
+  }
+}
+
+ipcMain.handle("check-for-updates", async () => {
+  if (!app.isPackaged) return { ok: false, packaged: false, message: "Updates are available only in the packaged desktop application." };
+  try {
+    const result = await autoUpdater.checkForUpdates();
+    const info = result?.updateInfo || null;
+    if (info && info.version && info.version !== app.getVersion()) {
+      sendUpdaterEvent("updater-status", { state: "available", version: info.version, currentVersion: app.getVersion() });
+      return { ok: true, state: "available", version: info.version, currentVersion: app.getVersion() };
+    }
+    sendUpdaterEvent("updater-status", { state: "up-to-date", currentVersion: app.getVersion() });
+    return { ok: true, state: "up-to-date", currentVersion: app.getVersion() };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unable to check for updates.";
+    sendUpdaterEvent("updater-status", { state: "error", message });
+    return { ok: false, state: "error", message };
+  }
+});
+
 async function createWindow() {
   const win = new BrowserWindow({
     show: false,
@@ -635,14 +662,33 @@ function configureAutoUpdater() {
   autoUpdater.allowDowngrade = false;
   autoUpdater.allowPrerelease = false;
 
-  autoUpdater.on("checking-for-update", () => console.log("Checking for MutiaLytics updates..."));
-  autoUpdater.on("update-available", (info) => console.log(`MutiaLytics update available: ${info?.version || "unknown"}`));
-  autoUpdater.on("update-not-available", () => console.log("MutiaLytics is up to date."));
+  autoUpdater.on("checking-for-update", () => {
+    sendUpdaterEvent("updater-status", { state: "checking", currentVersion: app.getVersion() });
+  });
+  autoUpdater.on("update-available", (info) => {
+    sendUpdaterEvent("updater-status", {
+      state: "available",
+      version: info?.version || "unknown",
+      currentVersion: app.getVersion(),
+    });
+  });
+  autoUpdater.on("update-not-available", () => {
+    sendUpdaterEvent("updater-status", { state: "up-to-date", currentVersion: app.getVersion() });
+  });
   autoUpdater.on("download-progress", (progress) => {
-    console.log(`MutiaLytics update download: ${Math.round(progress.percent)}%`);
+    sendUpdaterEvent("updater-status", {
+      state: "downloading",
+      percent: Number.isFinite(progress?.percent) ? Math.round(progress.percent) : 0,
+      version: autoUpdater?.updateInfo?.version || "",
+      currentVersion: app.getVersion(),
+    });
   });
   autoUpdater.on("update-downloaded", async (info) => {
-    console.log(`MutiaLytics update downloaded: ${info?.version || "unknown"}`);
+    sendUpdaterEvent("updater-status", {
+      state: "downloaded",
+      version: info?.version || "unknown",
+      currentVersion: app.getVersion(),
+    });
     const result = await dialog.showMessageBox({
       type: "info",
       buttons: ["Restart Now", "Later"],
@@ -652,17 +698,17 @@ function configureAutoUpdater() {
       message: `MutiaLytics ${info?.version || "new"} is ready to install.`,
       detail: "The update has finished downloading. Restart now to apply it, or choose Later to install automatically the next time the application closes.",
     });
-    if (result.response === 0) {
-      setImmediate(() => autoUpdater.quitAndInstall(false, true));
-    }
+    if (result.response === 0) setImmediate(() => autoUpdater.quitAndInstall(false, true));
   });
-  autoUpdater.on("error", (err) => console.error("MutiaLytics auto-update error:", err));
+  autoUpdater.on("error", (err) => {
+    sendUpdaterEvent("updater-status", { state: "error", message: err?.message || "Update check failed." });
+    console.error("MutiaLytics auto-update error:", err);
+  });
 
-  // Delay the first check until the app window and local server are ready.
   setTimeout(() => {
     autoUpdater.checkForUpdates().catch((err) => console.error("Initial update check failed:", err));
   }, 10000);
-  setInterval(() => {
+  updaterInterval = setInterval(() => {
     autoUpdater.checkForUpdates().catch((err) => console.error("Scheduled update check failed:", err));
   }, 30 * 60 * 1000);
 }
