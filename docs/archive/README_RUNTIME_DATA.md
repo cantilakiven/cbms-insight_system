@@ -10,7 +10,7 @@ The application does **not** bundle the CBMS JSON datasets. Import them after la
 
 ### 2022 legacy merge
 
-The supplied 2022 dataset contains overlapping `_A`, `_B`, and `_C` snapshots. The importer deduplicates by the CBMS household key and recursively combines non-empty fields before normalization. With the supplied dataset this results in 3,265 unique households and 11,261 person records across 16 barangays.
+The supplied 2022 dataset contains overlapping `_A`, `_B`, and `_C` snapshots. The importer deduplicates by the CBMS household key and recursively combines non-empty fields before normalization. With the supplied CBMS 2022 dataset this results in 3,265 unique households and 11,261 person records across 16 barangays. The figure 3,265 is the unique household count; it is not a count of households with reported income.
 
 ### Food-security indicator note
 

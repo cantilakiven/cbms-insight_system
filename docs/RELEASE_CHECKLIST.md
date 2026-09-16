@@ -1,12 +1,36 @@
 # MutiaLytics Release Checklist
 
-1. Test `npm run electron:dev`.
-2. Test the packaged installer on Windows, including security PIN, exports, print preview, and physical printer output.
-3. Update `package.json` version.
-4. Commit and push to `main`.
-5. Create and push the matching tag: `v<package-version>`.
-6. Confirm GitHub Actions finishes successfully.
-7. In the GitHub Release, verify the NSIS `.exe`, `latest.yml`, and `.blockmap` assets exist.
-8. Install the new `.exe` on a clean test workstation.
-9. Open the installed application and confirm it detects the newer GitHub release on the next update check.
-10. Keep the previous release available so coworkers on the old version have a valid update target.
+## Before tagging
+
+- [ ] `package.json` version is the intended next version.
+- [ ] No release tag uses a lower version than the installed production build.
+- [ ] `npm run build` works locally.
+- [ ] `npm run electron:dev` works for a smoke test.
+
+## Tagging
+
+```powershell
+git add .
+git commit -m "Release v1.2.2"
+git push origin main
+git tag v1.2.2
+git push origin v1.2.2
+```
+
+## GitHub Release assets
+
+The workflow must publish all three updater assets:
+
+- [ ] `Mutia-Insight-Setup-X.Y.Z.exe`
+- [ ] `latest.yml`
+- [ ] `Mutia-Insight-Setup-X.Y.Z.exe.blockmap`
+
+GitHub may also show the automatic Source code ZIP/TAR.GZ assets. Those are not the desktop installer.
+
+## Post-release test
+
+- [ ] Install the released `.exe` on a clean Windows machine.
+- [ ] Confirm the app opens normally.
+- [ ] Publish the next patch version.
+- [ ] Confirm the installed app detects the newer version.
+- [ ] Confirm the update download/install completes.
