@@ -247,13 +247,15 @@ export function PrintPreviewModal() {
               <Button size="sm" variant={zoomMode === "fit" ? "default" : "ghost"} onClick={() => setZoomMode("fit")}>Fit</Button>
               <Button size="sm" variant={zoomMode === "75" ? "default" : "ghost"} onClick={() => setZoomMode("75")}>75%</Button>
               <Button size="sm" variant={zoomMode === "100" ? "default" : "ghost"} onClick={() => setZoomMode("100")}>100%</Button>
+              <Button size="sm" variant="ghost" onClick={() => previewAreaRef.current?.querySelector<HTMLElement>('.cbms-preview-scroller')?.scrollTo({ top: 0, behavior: 'smooth' })}>Top</Button>
+              <Button size="sm" variant="ghost" onClick={() => { const el = previewAreaRef.current?.querySelector<HTMLElement>('.cbms-preview-scroller'); if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }); }}>Bottom</Button>
               <Button size="sm" variant="ghost" disabled={page <= 0} onClick={() => setPage((p) => p - 1)}>Previous</Button>
               <Button size="sm" variant="ghost" disabled={page >= pages.length - 1} onClick={() => setPage((p) => p + 1)}>Next</Button>
             </div>
           </div>
 
-          <div className="flex h-[calc(100%-44px)] min-h-0 items-center justify-center overflow-hidden rounded-xl border border-border/70 bg-[radial-gradient(circle_at_center,rgba(255,255,255,.98),rgba(226,232,240,.8))] p-3">
-            <div className="relative shrink-0" style={{ width: displayW, height: displayH }}>
+          <div className="cbms-preview-scroller flex h-[calc(100%-44px)] min-h-0 min-w-0 items-start justify-start overflow-auto rounded-xl border border-border/70 bg-[radial-gradient(circle_at_center,rgba(255,255,255,.98),rgba(226,232,240,.8))] p-3 [scrollbar-gutter:stable_both-edges]">
+            <div className="relative shrink-0 mx-auto" style={{ width: displayW, height: displayH, minWidth: displayW, minHeight: displayH }}>
               <iframe key={`preview-${paperSize}-${orientation}-${page}-${pages.length}`} title="Printable paper preview" srcDoc={currentPage} className="absolute left-0 top-0 block origin-top-left border-0 bg-white shadow-[0_18px_50px_rgba(15,23,42,.18)]" style={{ width: paperWidthPx, height: paperHeightPx, transform: `scale(${zoom})` }} />
             </div>
           </div>

@@ -1,6 +1,6 @@
 {
   "name": "mutialytics",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Community-Based Monitoring System (CBMS 2022 / 2024 Desktop Analytics)",
   "author": "Kiven Cantila",
   "private": true,
@@ -19,7 +19,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "build:cloudflare": "cross-env CLOUDFLARE=true vite build",
-    "electron:publish": "npm run build && electron-builder --win --x64 --publish always"
+    "electron:publish": "npm run build && electron-builder --win nsis --x64 --publish never",
+    "validate:release": "node scripts/validate-release.mjs"
   },
   "build": {
     "appId": "com.cbms.insights",

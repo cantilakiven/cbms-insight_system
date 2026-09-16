@@ -4,13 +4,16 @@ on:
   push:
     tags:
       - "v*"
-  workflow_dispatch:
 
 permissions:
   contents: write
 
 env:
   RELEASE_DIR: release
+
+concurrency:
+  group: mutialytics-release-${{ github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
   release:
@@ -44,7 +47,10 @@ jobs:
       - name: Build Windows NSIS installer and updater metadata
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --win nsis --x64 --publish always
+        run: npx electron-builder --win nsis --x64 --publish never
+
+      - name: Validate generated updater metadata
+        run: npm run validate:release
 
       - name: Inspect generated release files
         shell: pwsh
@@ -79,12 +85,13 @@ jobs:
           $blockmap = Get-ChildItem $env:RELEASE_DIR -Filter '*.blockmap' -File | Select-Object -First 1
 
           gh release view $tag --repo $env:GITHUB_REPOSITORY *> $null
-          if ($LASTEXITCODE -ne 0) {
-            gh release create $tag --repo $env:GITHUB_REPOSITORY --title "MutiaLytics $tag" --generate-notes
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "Release $tag already exists; uploading/replacing only the three expected Windows updater assets."
+          } else {
+            gh release create $tag --repo $env:GITHUB_REPOSITORY --title "MutiaLytics $tag" --generate-notes --latest
+            if ($LASTEXITCODE -ne 0) { throw "Unable to create GitHub Release $tag" }
           }
 
-          # electron-builder normally publishes these assets itself. Upload them again
-          # explicitly so a GitHub release can never end up containing only a .blockmap.
           gh release upload $tag $exe.FullName $yml.FullName $blockmap.FullName --repo $env:GITHUB_REPOSITORY --clobber
 
       - name: Verify GitHub Release contains installer and updater metadata
