@@ -149,3 +149,9 @@ The application is configured for `cantilakiven/cbms-mutia_system` in `package.j
 
 See `docs/AUTO_UPDATE_GITHUB.md` for the full release checklist and troubleshooting.
 
+git add .
+git commit -m "Release v1.2.3"
+git push origin main
+
+git tag v1.2.3
+git push origin v1.2.3
