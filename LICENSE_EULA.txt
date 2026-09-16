@@ -1,0 +1,29 @@
+MUTIALYTICS END USER LICENSE AGREEMENT (EULA)
+
+IMPORTANT: Please read this agreement carefully before installing or using this software.
+
+1. Acceptance
+By installing, copying, or otherwise using this software, you agree to be bound by the terms of this End User License Agreement.
+
+2. License
+This software is licensed, not sold. The developer grants you a non-exclusive, non-transferable right to use the software on a single computer.
+
+3. Disclaimer
+THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. THE DEVELOPER DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+
+4. Limitation of Liability
+IN NO EVENT SHALL THE DEVELOPER BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES ARISING OUT OF OR IN CONNECTION WITH THE SOFTWARE.
+
+5. Export logs and data
+Export logs and generated passwords are stored locally on your computer in the application data folder. Keep them secure. The developer is not responsible for misuse of passwords or exported files.
+
+6. Support and contact
+If you encounter issues, incorrect data, or security concerns, please contact the developer at the email address provided in the About page or README.
+
+7. Termination
+This license will terminate automatically if you fail to comply with any of its terms.
+
+8. Governing Law
+This agreement is governed by the laws of the developer's jurisdiction.
+
+By installing or using this software, you acknowledge that you have read and understood this EULA.
