@@ -29,6 +29,10 @@ contextBridge.exposeInMainWorld("electronPrint", {
   printHtml: (html, printerName, options) => ipcRenderer.invoke("print-html", { html, printerName: printerName || "", options: options || {} }),
 });
 
+contextBridge.exposeInMainWorld("electronApp", {
+  getVersion: () => ipcRenderer.invoke("get-app-version"),
+});
+
 contextBridge.exposeInMainWorld("electronUpdater", {
   checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
   onStatus: (callback) => {

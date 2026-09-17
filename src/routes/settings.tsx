@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { KeyRound, ShieldCheck, LockKeyhole, CheckCircle2 } from "lucide-react";
+import { KeyRound, ShieldCheck, LockKeyhole, CheckCircle2, RefreshCw, DownloadCloud } from "lucide-react";
 import logo from "@/assets/mutia-logo.png";
 
 export const Route = createFileRoute("/settings")({ component: SettingsPage });
@@ -12,13 +12,39 @@ function SettingsPage() {
   const [confirmPin, setConfirmPin] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [appVersion, setAppVersion] = useState("—");
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [updateMessage, setUpdateMessage] = useState("");
 
   useEffect(() => {
     void (async () => {
       const state = await (window as any).electronStore?.getAuthState?.();
       setConfigured(Boolean(state?.configured));
+      const version = await (window as any).electronApp?.getVersion?.();
+      if (version) setAppVersion(version);
     })();
   }, []);
+
+  const checkForUpdates = async () => {
+    setCheckingUpdate(true);
+    setUpdateMessage("");
+    try {
+      const result = await (window as any).electronUpdater?.checkForUpdates?.();
+      if (!result?.ok) {
+        setUpdateMessage(result?.message || "Update checks are available in the installed desktop application.");
+      } else if (result.state === "up-to-date") {
+        setUpdateMessage(`You are using the latest installed version (${result.currentVersion || appVersion}).`);
+      } else if (result.state === "available") {
+        setUpdateMessage(`A newer version (${result.version}) is available. Downloading in the background.`);
+      } else {
+        setUpdateMessage(`Update check completed for version ${result.currentVersion || appVersion}.`);
+      }
+    } catch (error) {
+      setUpdateMessage(error instanceof Error ? error.message : "Unable to check for updates.");
+    } finally {
+      setCheckingUpdate(false);
+    }
+  };
 
   const save = async () => {
     setMessage("");
@@ -52,5 +78,20 @@ function SettingsPage() {
       {message && <div className="mt-4 flex items-start gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" /><span>{message}</span></div>}
     </section>
     <section className="rounded-2xl border border-border bg-muted/30 p-5 text-sm text-muted-foreground"><div className="flex items-center gap-2 font-bold text-foreground"><ShieldCheck className="h-4 w-4 text-primary" /> Security behavior</div><p className="mt-2">The PIN is stored as a salted, memory-hard hash in the application's local settings. The raw PIN is never written to disk. After a PIN is configured, every fresh application launch shows only the secure PIN login screen.</p></section>
+    <section className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">Update center</div>
+          <h2 className="mt-1 font-display text-lg font-bold">MutiaLytics {appVersion !== "—" ? `v${appVersion}` : ""}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Use the packaged desktop application to check GitHub for a newer release. Development mode does not install updates.</p>
+        </div>
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><DownloadCloud className="h-5 w-5" /></div>
+      </div>
+      <button type="button" onClick={() => void checkForUpdates()} disabled={checkingUpdate} className="mt-4 inline-flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5 text-sm font-bold text-primary hover:bg-primary/10 disabled:opacity-50">
+        <RefreshCw className={`h-4 w-4 ${checkingUpdate ? "animate-spin" : ""}`} />
+        {checkingUpdate ? "Checking…" : "Check for updates"}
+      </button>
+      {updateMessage && <div className="mt-3 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-muted-foreground">{updateMessage}</div>}
+    </section>
   </div>;
 }

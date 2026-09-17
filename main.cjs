@@ -604,6 +604,8 @@ function sendUpdaterEvent(channel, payload = {}) {
   }
 }
 
+ipcMain.handle("get-app-version", () => app.getVersion());
+
 ipcMain.handle("check-for-updates", async () => {
   if (!app.isPackaged) return { ok: false, packaged: false, message: "Updates are available only in the packaged desktop application." };
   try {
