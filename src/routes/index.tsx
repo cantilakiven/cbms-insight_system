@@ -12,7 +12,6 @@ import {
   Users,
   WalletCards,
 } from "lucide-react";
-import hallImage from "@/assets/mutia-municipal-hall.jpg";
 import {
   getActiveBarangay,
   getActiveYear,
@@ -47,7 +46,7 @@ function Dashboard() {
     { label: "Population", value: persons.length, sub: `${male.toLocaleString()} male · ${female.toLocaleString()} female`, icon: Users },
     { label: "Households", value: households.length, sub: `${averageHouseholdSize ? averageHouseholdSize.toFixed(1) : "N/A"} average members`, icon: Home },
     { label: "Low-income households", value: lowIncome, sub: `${pct(lowIncome, households.filter(h => Number.isFinite(Number(h.h06_total_family_income))).length)} of reported income`, icon: WalletCards },
-    { label: "Barangays", value: barangayCount, sub: brgy ? `Filtered to ${brgy}` : "Municipality-wide", icon: MapPin },
+    { label: "Barangays", value: barangayCount, sub: brgy ? `Filtered to ${brgy}` : "Area-wide", icon: MapPin },
   ];
 
   const actions = [
@@ -63,10 +62,10 @@ function Dashboard() {
         <div className="dashboard-hero-copy">
           <div className="dashboard-eyebrow">
             <span className="dashboard-status-dot" />
-            Municipal Information System
+            Community Data & Insights
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="dashboard-chip">Municipality of Mutia</span>
+            <span className="dashboard-chip">Selected Local Area</span>
             <span className="dashboard-chip">CBMS {year}</span>
             <span className="dashboard-chip">{getSourceWatermark(year)}</span>
           </div>
@@ -74,7 +73,7 @@ function Dashboard() {
             Community-Based Monitoring System
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Municipal community data for planning, reporting, analysis and evidence-based decision-making.
+            Community data for planning, reporting, analysis and evidence-based decision-making.
           </p>
           <div className="mt-5 flex flex-wrap gap-2.5">
             <Link to="/comparative" className="dashboard-primary-action">
@@ -86,15 +85,15 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="dashboard-hero-photo-wrap">
-          <img src={hallImage} alt="Municipal Hall of Mutia" className="dashboard-hero-photo" />
-          <div className="dashboard-photo-caption">
-            <span>Municipal Hall</span>
-            <span>Mutia, Zamboanga del Norte</span>
-          </div>
-          <div className="dashboard-photo-seal">
-            <CheckCircle2 className="h-4 w-4" />
-            Local reference data
+        <div className="dashboard-hero-photo-wrap dashboard-hero-visual">
+          <div className="dashboard-visual-grid" />
+          <div className="dashboard-visual-glow dashboard-visual-glow-a" />
+          <div className="dashboard-visual-glow dashboard-visual-glow-b" />
+          <div className="dashboard-visual-card">
+            <img src="/cbms-insights-logo.png" alt="CBMS Insights" className="h-20 w-20 rounded-2xl bg-white/95 p-2 shadow-2xl" />
+            <div className="mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/70">CBMS Insights</div>
+            <div className="mt-1 text-lg font-black text-white">Data → Insight → Action</div>
+            <div className="mt-1 text-xs leading-5 text-white/70">Analyze authorized CBMS datasets with a local-first, privacy-conscious workflow.</div>
           </div>
         </div>
       </section>
@@ -120,7 +119,7 @@ function Dashboard() {
           <div className="dashboard-panel-head">
             <div>
               <p className="dashboard-section-label">Quick access</p>
-              <h2 className="mt-1 text-lg font-black">Common municipal tasks</h2>
+              <h2 className="mt-1 text-lg font-black">Common data tasks</h2>
             </div>
             <span className="dashboard-head-note">Selected year: {year}</span>
           </div>

@@ -14,7 +14,7 @@ Historical patch notes are intentionally not kept in the repository. The root `R
 
 ## Data safety
 
-Never commit municipal CBMS JSON, `.RData`, `.Rda`, `.RDS`, PSA RSA keys, signing certificates, tokens, or generated release artifacts. Run:
+Never commit local-area CBMS JSON, `.RData`, `.Rda`, `.RDS`, PSA RSA keys, signing certificates, tokens, or generated release artifacts. Run:
 
 ```powershell
 npm run validate:project

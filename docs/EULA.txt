@@ -1,25 +1,27 @@
-MUTIALYTICS — END USER LICENSE AGREEMENT (EULA)
+CBMS INSIGHTS — END USER LICENSE AGREEMENT (EULA)
 Version 1.0
 
 IMPORTANT: Please read this agreement carefully before installing or using the software.
 
 1. ACCEPTANCE
-By installing, copying, or using MutiaLytics (the “Software”), you acknowledge that you have read and accepted this EULA. If you do not agree, do not install or use the Software.
+By installing, copying, or using CBMS Insights (the “Software”), you acknowledge that you have read and accepted this EULA. If you do not agree, do not install or use the Software.
 
 2. SOFTWARE SCOPE
-MutiaLytics is an independent municipal data processing, management, analytics, reporting, export, and printing utility intended for authorized Local Government Unit (LGU) personnel, particularly Municipal Planning and Development Office (MPDO) workflows. The current desktop application reads CBMS JSON data supplied by the authorized operator. It does not bundle municipal CBMS raw datasets and does not contain or distribute PSA RSA decryption keys.
+CBMS Insights is an independent CBMS data processing, management, analytics, reporting, export, and printing utility intended for authorized data custodians, Local Government Unit (LGU) personnel, planners, analysts, researchers, and other authorized users. The current desktop application reads CBMS JSON data supplied by the authorized operator. It does not bundle local CBMS raw datasets and does not contain or distribute PSA RSA decryption keys.
 
 3. LICENSE AND INTELLECTUAL PROPERTY
-The Software is licensed, not sold. The developer grants the LGU a non-exclusive, non-transferable license to use the Software for authorized municipal planning, analysis, reporting, and related administrative purposes. Unless separately agreed in writing, the developer retains intellectual-property rights in the Software source code, application architecture, and user interface. The LGU retains responsibility for the datasets it lawfully provides to the Software and for how those datasets are used, exported, stored, and shared.
+The Software is licensed, not sold. The developer grants the LGU a non-exclusive, non-transferable license to use the Software for authorized data analysis, planning, reporting, research, and related administrative purposes. Unless separately agreed in writing, the developer retains intellectual-property rights in the Software source code, application architecture, and user interface. The LGU retains responsibility for the datasets it lawfully provides to the Software and for how those datasets are used, exported, stored, and shared.
 
 4. DATA SOURCE, AUTHORIZATION, AND PSA NON-AFFILIATION
-MutiaLytics is an independent software project and is not an official PSA product, does not claim PSA endorsement, and is not affiliated with the Philippine Statistics Authority (PSA). The Software does not bypass PSA access controls and does not ship PSA RSA keys. Any upstream extraction or decryption of PSA-delivered RData files must be performed through an authorized PSA/LGU workflow using credentials and keys issued or authorized for that purpose. Operators must not use this Software to access data they are not authorized to access.
+CBMS Insights is an independent software project and is not an official PSA product, does not claim PSA endorsement, and is not affiliated with the Philippine Statistics Authority (PSA). The Software does not bypass PSA access controls and does not ship PSA RSA keys. Any upstream extraction or decryption of PSA-delivered RData files must be performed through an authorized PSA/LGU workflow using credentials and keys issued or authorized for that purpose. Operators must not use this Software to access data they are not authorized to access.
 
 5. DATA PRIVACY AND GOVERNMENT DATA RESPONSIBILITY
-CBMS datasets may contain personal information and sensitive personal information. The responsible LGU/entity must determine and comply with its obligations under applicable Philippine privacy and records-management requirements, including Republic Act No. 10173 (Data Privacy Act of 2012), its implementing rules, and Republic Act No. 11315 (Community-Based Monitoring System Act). MutiaLytics does not replace the LGU’s privacy, security, records-retention, access-control, or disclosure policies.
+CBMS datasets may contain personal information and sensitive personal information. The responsible LGU/entity must determine and comply with its obligations under applicable Philippine privacy and records-management requirements, including Republic Act No. 10173 (Data Privacy Act of 2012), its implementing rules, and Republic Act No. 11315 (Community-Based Monitoring System Act). CBMS Insights does not replace the LGU’s privacy, security, records-retention, access-control, or disclosure policies.
 
 6. EXPORT SECURITY — AES-256 PROTECTION
 The Software’s file-export functions are designed to protect exported data using password-protected AES-256 encrypted containers. CSV, XLSX, PDF, and DOCX exports are wrapped in password-protected AES-256 ZIP archives. Protected HTML report exports use AES-256-GCM encryption with a derived key. The Software generates export passwords and records export details locally for authorized retrieval. The export password must be kept separate from the exported file.
+
+Every protected file export generated by CBMS Insights through its protected export workflows is wrapped using AES-256-based encryption as described above. The protection applies to the exported archive/container or protected HTML file created by the system; it does not convert an externally copied, manually recreated, or printed document into an encrypted artifact.
 
 The AES-256 protection applies to the Software’s protected file-export workflows. It does not mean that a physical printout, a screen display, or an unprotected copy intentionally created outside the Software is encrypted. The LGU remains responsible for secure handling of exported files and passwords.
 
@@ -55,8 +57,9 @@ The Windows NSIS installer is configured to display this EULA as the installer�
 
 15. CREDITS
 Developer: Kiven Cantila
+Developer Facebook: https://www.facebook.com/hello.kwekwe
 UI/UX Designer: Clifford Kevin Bohol
 Tester: Fredrich Cabasag
-Institutional context / intended office: Municipal Planning and Development Office, Municipality of Mutia, Zamboanga del Norte
+Generic software for authorized CBMS data custodians and local government users
 
 This EULA is informational software licensing text and is not a substitute for advice from qualified Philippine legal counsel, the LGU Data Protection Officer, the National Privacy Commission, PSA, or other competent government authority.

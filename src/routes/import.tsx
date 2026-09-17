@@ -5,7 +5,7 @@ export const Route = createFileRoute("/import")({
   component: ImportPage,
   head: () => ({
     meta: [
-      { title: "Import CBMS Data · Local Data Municipal Analytics" },
+      { title: "Import CBMS Data · Community Data & Insights" },
       {
         name: "description",
         content:

@@ -135,7 +135,7 @@ function areaMeta(h: any, filename: string) {
     city_mun_code: city,
     barangay_code: brgy,
     id: municipalityCode,
-    name: "Mutia, Zamboanga del Norte",
+    name: "Selected Local Area",
     legacy_source: filename,
   };
 }

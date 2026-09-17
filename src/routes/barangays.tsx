@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useSyncExternalStore } from "react";
-import { getActiveYear, getAvailableBarangays, getDataVersion, getYearDatasets, municipality, subscribeData } from "@/data/cbms";
+import { getActiveYear, getAvailableBarangays, getDataVersion, getYearDatasets, coverageLabel, subscribeData } from "@/data/cbms";
 import { MapPin, Printer, FileSpreadsheet, FileText, FileType2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { exportDOCX, exportPDF, exportXLSX, printPayload } from "@/lib/cbms-export";
@@ -77,7 +77,7 @@ function BarangaysPage() {
   ];
 
   const payload = {
-    title: `Barangay Population & Household Summary — ${municipality}`,
+    title: `Barangay Population & Household Summary — ${coverageLabel}`,
     subtitle: `${barangays.length} barangays · ${totals.persons.toLocaleString()} persons · ${totals.households.toLocaleString()} households`,
     columns,
     rows: exportRows,

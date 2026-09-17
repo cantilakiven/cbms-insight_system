@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSyncExternalStore } from "react";
-import { datasets, detectedFiles, dataLoadedAt, municipality, getYearDatasets, getYearDataHealth, getActiveYear, getSourceWatermark, getImportReport, subscribeData, getDataVersion } from "@/data/cbms";
+import { datasets, detectedFiles, dataLoadedAt, coverageLabel, getYearDatasets, getYearDataHealth, getActiveYear, getSourceWatermark, getImportReport, subscribeData, getDataVersion } from "@/data/cbms";
 import { RULES, getRuleChoice, subscribeRuleChanges } from "@/lib/cbms-recognition";
 import { CheckCircle2, AlertTriangle, FileJson, Clock, Database, Layers3, Search } from "lucide-react";
 
@@ -57,7 +57,7 @@ function InspectorPage() {
       <div>
         <h1 className="font-display text-2xl font-bold">Dataset Inspector</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          CBMS source records loaded for the Municipal Planning and Development Office, including the records loaded from each year and which fields are powering your
+          CBMS source records loaded for the Authorized CBMS Data Custodian, including the records loaded from each year and which fields are powering your
           PWD, 4Ps, and Food Stamp rosters.
         </p>
       </div>
@@ -79,7 +79,7 @@ function InspectorPage() {
         <header className="border-b border-border p-4">
           <h2 className="font-display text-lg font-semibold">Detected JSON files</h2>
           <p className="text-xs text-muted-foreground">
-            Municipality: <span className="font-medium text-foreground">{municipality}</span> ·
+            Coverage: <span className="font-medium text-foreground">{coverageLabel}</span> ·
             Files are auto-loaded by filename pattern. Drop new JSONs into{" "}
             <span className="font-mono">src/data/cbms/</span> and the app reloads.
           </p>
@@ -140,7 +140,7 @@ function InspectorPage() {
           <div className="mt-4 grid gap-2 md:grid-cols-2">
             {legacySections.map((section) => <div key={section.name} className="rounded-xl border border-border bg-background p-3"><div className="flex items-center justify-between"><span className="font-mono text-xs font-bold">{section.name}</span><span className="text-[10px] text-muted-foreground">{section.fields} fields · {section.coverage}% rows</span></div><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: `${section.coverage}%` }} /></div><p className="mt-1 text-[10px] text-muted-foreground">{section.sample.join(", ")}{section.sample.length >= 5 ? "…" : ""}</p></div>)}
           </div>
-          <p className="mt-4 text-[11px] text-muted-foreground">{getSourceWatermark(2022)} · These fields remain available for future municipal indicators even when the current dashboard does not yet have a dedicated card.</p>
+          <p className="mt-4 text-[11px] text-muted-foreground">{getSourceWatermark(2022)} · These fields remain available for future local indicators even when the current dashboard does not yet have a dedicated card.</p>
         </div>
       </section>
 

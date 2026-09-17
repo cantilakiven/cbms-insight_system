@@ -1713,7 +1713,7 @@ function AgricultureByBarangay({ mode, onSelect }: { mode: AgricultureMode; onSe
         ],
         title: `Farming & Non-Farming Households by Barangay — CBMS ${year}`,
         subtitle: "Households are classified as farming when at least one household member has a normalized farmer/agricultural occupation or industry indicator.",
-        note: `Method: Farming household = household with at least one member classified as agricultural/farming. Non-farming = all other households. Source: Municipal Planning and Development Office · CBMS ${year} dataset · Municipality of Mutia, Zamboanga del Norte`,
+        note: `Method: Farming household = household with at least one member classified as agricultural/farming. Non-farming = all other households. Source: Authorized CBMS Data Custodian · CBMS ${year} dataset · Selected local area`,
       };
     }
 
@@ -1784,7 +1784,7 @@ function AgricultureByBarangay({ mode, onSelect }: { mode: AgricultureMode; onSe
         ],
         title: `Farming Households with Reported Income by Barangay — CBMS ${year}`,
         subtitle: "Barangay-sorted roster of agricultural/farming persons whose household has a numeric reported H06 Total Family Income. Income is a household amount and is not treated as the individual person's salary.",
-        note: `Method: Reported-income farming household = household classified as farming with a numeric H06 Total Family Income. Reported-income rate = reported-income farming households ÷ all farming households × 100. Detailed rows list agricultural/farming household members; the reported family income belongs to the household and may therefore repeat for multiple members of the same household. Farmer / agricultural activity is derived from CBMS farmer, occupation, industry, and preserved agricultural-engagement fields. Source: Municipal Planning and Development Office · CBMS ${year} dataset · Municipality of Mutia, Zamboanga del Norte`,
+        note: `Method: Reported-income farming household = household classified as farming with a numeric H06 Total Family Income. Reported-income rate = reported-income farming households ÷ all farming households × 100. Detailed rows list agricultural/farming household members; the reported family income belongs to the household and may therefore repeat for multiple members of the same household. Farmer / agricultural activity is derived from CBMS farmer, occupation, industry, and preserved agricultural-engagement fields. Source: Authorized CBMS Data Custodian · CBMS ${year} dataset · Selected local area`,
       };
     }
 
@@ -1837,7 +1837,7 @@ function AgricultureByBarangay({ mode, onSelect }: { mode: AgricultureMode; onSe
           ],
           title: `Farming Household Poverty / Low-Income Proxy by Barangay — CBMS ${year}`,
           subtitle: "Income-based proxy only: reported farming-household family income below ₱20,000. This is not an official PSA poverty-line classification.",
-          note: `Method: Magnitude = count of farming households with reported H06 Total Family Income below ₱20,000. Incidence / rate = magnitude ÷ farming households with reported income × 100. Source: Municipal Planning and Development Office · CBMS ${year} dataset · Municipality of Mutia, Zamboanga del Norte`,
+          note: `Method: Magnitude = count of farming households with reported H06 Total Family Income below ₱20,000. Incidence / rate = magnitude ÷ farming households with reported income × 100. Source: Authorized CBMS Data Custodian · CBMS ${year} dataset · Selected local area`,
         };
       }
       const incomes = reported.map((h) => householdInfo.get(hhKeySafe(h))!.income as number).sort((a,b)=>a-b);
@@ -1860,7 +1860,7 @@ function AgricultureByBarangay({ mode, onSelect }: { mode: AgricultureMode; onSe
           { key: "_agri_occupation", label: "Agricultural Occupation" },
         ], title: `Agricultural Household Income by Barangay — CBMS ${year}`,
         subtitle: "Average and median income are calculated only from farming households with numeric reported family income.",
-        note: `Method: Average = sum of reported farming-household H06 Total Family Income ÷ number of farming households with reported income. Median = middle value after sorting reported incomes. Source: Municipal Planning and Development Office · CBMS ${year} dataset · Municipality of Mutia, Zamboanga del Norte`,
+        note: `Method: Average = sum of reported farming-household H06 Total Family Income ÷ number of farming households with reported income. Median = middle value after sorting reported incomes. Source: Authorized CBMS Data Custodian · CBMS ${year} dataset · Selected local area`,
       };
     }
 
@@ -1894,7 +1894,7 @@ function AgricultureByBarangay({ mode, onSelect }: { mode: AgricultureMode; onSe
       ],
       title: `Agricultural vs Non-Agricultural Employment by Barangay — CBMS ${year}`,
       subtitle: "Persons aged 15+ classified from employment status, occupation, and industry fields. Agricultural jobs are identified from normalized farmer/agricultural indicators and agriculture-related occupation/industry text.",
-      note: `Method: Agricultural job classification uses normalized e17_farmer plus agriculture-related occupation/industry terms; agricultural employment rate = agricultural employed ÷ labor-force population aged 15+ × 100. Source: Municipal Planning and Development Office · CBMS ${year} dataset · Municipality of Mutia, Zamboanga del Norte`,
+      note: `Method: Agricultural job classification uses normalized e17_farmer plus agriculture-related occupation/industry terms; agricultural employment rate = agricultural employed ÷ labor-force population aged 15+ × 100. Source: Authorized CBMS Data Custodian · CBMS ${year} dataset · Selected local area`,
     };
   }, [mode, year, ds.persons, ds.households, barangays, householdInfo, personByHousehold]);
 

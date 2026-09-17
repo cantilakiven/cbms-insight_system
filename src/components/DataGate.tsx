@@ -139,7 +139,7 @@ export function ImportPanel({ compact = false }: { compact?: boolean }) {
         <div className="rounded-2xl border border-primary/30 bg-primary/5 p-5">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold">22</div>
-            <div><h2 className="font-display font-semibold">CBMS 2022</h2><p className="text-xs text-muted-foreground">Legacy municipality folder</p></div>
+            <div><h2 className="font-display font-semibold">CBMS 2022</h2><p className="text-xs text-muted-foreground">Legacy local-area folder</p></div>
           </div>
           <p className="mt-3 text-xs leading-5 text-muted-foreground">Choose the complete 2022 folder. The system converts the legacy structure automatically.</p>
         </div>

@@ -16,10 +16,10 @@ const ITEMS: Item[] = [
   {
     title: "CBMS 2022 appears as N/A in a comparison",
     symptom: "The 2022 side of Comparative Analysis or Reports shows N/A, zero rows, or is unavailable after reopening the application.",
-    cause: "CBMS 2022 uses the legacy single-municipality JSON structure. The system converts it into the normalized runtime shape before analysis and keeps it separate from 2024.",
+    cause: "CBMS 2022 uses the legacy single-area JSON structure. The system converts it into the normalized runtime shape before analysis and keeps it separate from 2024.",
     fix: [
       "Open Import Data and choose `Load included CBMS 2022`.",
-      "Or select your own 2022 `*_A.json` municipality export.",
+      "Or select your own 2022 `*_A.json` local-area export.",
       "Wait until the import validation report finishes, then reopen Comparative Analysis.",
       "Do not rename the 2022 file unless you are also using the Auto-detect importer.",
     ],

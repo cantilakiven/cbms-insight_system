@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { municipality, getDataVersion, getYearDatasets, subscribeData, type DataYear } from "@/data/cbms";
+import { coverageLabel, getDataVersion, getYearDatasets, subscribeData, type DataYear } from "@/data/cbms";
 import { Button } from "@/components/ui/button";
 import {
   RULES, type RuleId, getRuleChoice, setRuleChoice, resetRuleChoices,
@@ -60,7 +60,7 @@ function ValidationPage() {
         <h1 className="font-display text-2xl font-bold">Data Validation & Mapping</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Inspect dataset health, see how many records are missing key fields, and confirm
-          how your municipality wants to recognise PWDs, 4Ps, and food-stamp members. Choices
+          how your local configuration should recognise PWDs, 4Ps, and food-stamp members. Choices
           here apply across the entire app (Sectors, Cross-tab, Search).
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -278,7 +278,7 @@ function validationPayload(year: DataYear): GroupedExportPayload {
   ];
   return {
     title: `CBMS ${year} Data Validation & Mapping Report`,
-    subtitle: `${municipality} · Recognition Rules, Field Coverage, and Joins & Integrity`,
+    subtitle: `${coverageLabel} · Recognition Rules, Field Coverage, and Joins & Integrity`,
     columns: [
       { key: "field", label: "Field / Metric" },
       { key: "present", label: "Present / Count" },
@@ -299,7 +299,7 @@ function validationPayload(year: DataYear): GroupedExportPayload {
       { label: "Barangay records", value: selected.barangays.length },
       { label: "Orphaned persons", value: orphans, percentage: selected.persons.length ? (orphans / selected.persons.length) * 100 : 0 },
     ],
-    note: `CBMS ${year} validation dataset · ${municipality}`,
+    note: `CBMS ${year} validation dataset · ${coverageLabel}`,
   };
 }
 

@@ -22,7 +22,7 @@ export const DATASET_LABELS: Record<DatasetKey, string> = {
   personsTvet: "Persons — TVET",
 };
 
-export const municipality = "Mutia, Zamboanga del Norte";
+export const coverageLabel = "Selected Local Area";
 const empty = (): Datasets => Object.fromEntries(DATASET_KEYS.map((k) => [k, []])) as unknown as Datasets;
 
 const yearStores: Record<DataYear, Datasets> = { 2022: empty(), 2024: empty() };
@@ -92,12 +92,12 @@ export function personsByHousehold(year: DataYear = activeYear) {
 export function getPersonFullName(p:any) { return [p?.a01_last_name,p?.a01_first_name,p?.a01_middle_name,p?.a01_suffix].filter(Boolean).join(", "); }
 export function getSourceWatermark(scope:any = activeYear) {
   const label = scope === "comparison"
-    ? "Source: Municipal Planning and Development Office · CBMS 2022 and CBMS 2024 datasets"
-    : `Source: Municipal Planning and Development Office · CBMS ${scope} dataset`;
-  return `${label} · Municipality of Mutia, Zamboanga del Norte`;
+    ? "Source: Authorized CBMS JSON datasets · CBMS 2022 and CBMS 2024"
+    : `Source: Authorized CBMS JSON dataset · CBMS ${scope}`;
+  return `${label}`;
 }
 
-const DB_NAME = "mutialytics-cbms-runtime";
+const DB_NAME = "cbms-insights-runtime";
 const DB_VERSION = 2;
 const openDb = () => new Promise<IDBDatabase>((resolve,reject)=>{
   if (typeof indexedDB === "undefined") return reject(new Error("IndexedDB unavailable"));

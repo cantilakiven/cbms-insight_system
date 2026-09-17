@@ -37,15 +37,15 @@ function CompendiumPage() {
   const barangayOptions = getAvailableBarangays(year);
   const [book, setBook] = useState<ReturnType<typeof buildBook> | null>(null);
   const [building, setBuilding] = useState(false);
-  const [buildPhase, setBuildPhase] = useState("Preparing municipal report");
+  const [buildPhase, setBuildPhase] = useState("Preparing CBMS report");
 
   useEffect(() => {
     let alive = true;
     setBook(null);
     setBuilding(true);
-    setBuildPhase("Preparing municipal report");
+    setBuildPhase("Preparing CBMS report");
     const phaseTimer = window.setInterval(() => {
-      setBuildPhase((current) => current === "Preparing municipal report" ? "Calculating CBMS tables" : current === "Calculating CBMS tables" ? "Building comparative graphs" : current === "Building comparative graphs" ? "Assembling the report book" : "Preparing municipal report");
+      setBuildPhase((current) => current === "Preparing CBMS report" ? "Calculating CBMS tables" : current === "Calculating CBMS tables" ? "Building comparative graphs" : current === "Building comparative graphs" ? "Assembling the report book" : "Preparing CBMS report");
     }, 700);
     const run = () => {
       if (!alive) return;
@@ -155,7 +155,7 @@ function CompendiumPage() {
               onChange={(e) => setBarangay(e.target.value)}
               className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-normal normal-case tracking-normal text-foreground"
             >
-              <option value="">All barangays (municipality-wide)</option>
+              <option value="">All barangays (area-wide)</option>
               {barangayOptions.map((b: any) => (
                 <option key={b.area_code || b.area_name} value={b.area_name}>{b.area_name}</option>
               ))}
@@ -200,7 +200,7 @@ function CompendiumPage() {
 
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           {[
-            ["Core municipal reports", SECTION_CATALOG.slice(0, 3)],
+            ["Core CBMS reports", SECTION_CATALOG.slice(0, 3)],
             ["Sector & statistical reports", SECTION_CATALOG.slice(3)],
           ].map(([group, items]) => (
             <details key={String(group)} open className="group overflow-hidden rounded-xl border border-border bg-background">
@@ -286,7 +286,7 @@ function CompendiumPage() {
       </section>
 
       <footer className="border-t border-border pt-4 text-center text-[11px] text-muted-foreground">
-        Source: MUNICIPAL PLANNING AND DEVELOPMENT OFFICE
+        Source: AUTHORIZED CBMS DATA
       </footer>
     </div>
   );

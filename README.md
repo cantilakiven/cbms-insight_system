@@ -1,20 +1,22 @@
-# MutiaLytics — CBMS Automated Data Conversion & Management System
+# CBMS Insights — CBMS Automated Data Conversion & Management System
 
+**Authorized CBMS Data Custodian · Selected local area**
 
+CBMS Insights is an offline-first desktop application for authorized local-government personnel who need to read, validate, organize, analyze, compare, export, and print Community-Based Monitoring System (CBMS) data without writing code.
 
-**Municipal Planning and Development Office · Municipality of Mutia, Zamboanga del Norte**
+The project was created from a practical local-data need: official CBMS data can be technically difficult to turn into usable tables, and not every LGU employee has the time or programming background to write Python, JavaScript, or R scripts. The system turns the prepared CBMS JSON records into a guided interface with searchable people, household views, barangay summaries, sector rosters, statistical reports, comparative analysis, a Compendium, encrypted exports, print preview, and update management.
 
-MutiaLytics is an offline-first desktop application for authorized municipal personnel who need to read, validate, organize, analyze, compare, export, and print Community-Based Monitoring System (CBMS) data without writing code.
+## Official repository
 
-The project was created from a practical municipal need: official CBMS data can be technically difficult to turn into usable tables, and not every LGU employee has the time or programming background to write Python, JavaScript, or R scripts. The system turns the prepared CBMS JSON records into a guided interface with searchable people, household views, barangay summaries, sector rosters, statistical reports, comparative analysis, a Compendium, encrypted exports, print preview, and update management.
+The project source and release workflow are maintained at [github.com/cantilakiven/cbms-insight_system](https://github.com/cantilakiven/cbms-insight_system). The packaged Electron updater is configured to use this repository for GitHub Releases.
 
-> **Important scope and safety statement:** the current MutiaLytics desktop application does **not** bundle municipal CBMS records, PSA-delivered `.RData` files, or PSA RSA decryption keys. It consumes JSON files supplied by the authorized operator at runtime. Any upstream RData decryption or conversion must be performed through an authorized PSA/LGU workflow using credentials and keys that the operator is authorized to use. MutiaLytics is not a PSA product and is not represented as PSA-endorsed.
+> **Important scope and safety statement:** the current CBMS Insights desktop application does **not** bundle local-area CBMS records, PSA-delivered `.RData` files, or PSA RSA decryption keys. It consumes JSON files supplied by the authorized operator at runtime. Any upstream RData decryption or conversion must be performed through an authorized PSA/LGU workflow using credentials and keys that the operator is authorized to use. CBMS Insights is not a PSA product and is not represented as PSA-endorsed.
 
 ---
 
 ## 1. What the software does
 
-MutiaLytics supports the local processing lifecycle after an authorized CBMS data set has been prepared in JSON form:
+CBMS Insights supports the local processing lifecycle after an authorized CBMS data set has been prepared in JSON form:
 
 1. **Import CBMS JSON files** for CBMS 2022 and/or CBMS 2024.
 2. **Recognize file types** such as barangay, household, person, interview, child-mortality, and TVET records from their filenames and record structure.
@@ -44,11 +46,11 @@ Generated reports use the selected data year. A 2022 report is labeled CBMS 2022
 
 The standard report source watermark is:
 
-> **Source: Municipal Planning and Development Office · CBMS 2022 dataset · Municipality of Mutia, Zamboanga del Norte**
+> **Source: Authorized CBMS data · CBMS 2022 dataset · Selected local area**
 >
 > or
 >
-> **Source: Municipal Planning and Development Office · CBMS 2024 dataset · Municipality of Mutia, Zamboanga del Norte**
+> **Source: Authorized CBMS data · CBMS 2024 dataset · Selected local area**
 
 The source statement is an institutional/reporting attribution used by this software. It does not change the legal ownership, custody, or official provenance of the underlying CBMS dataset.
 
@@ -58,9 +60,9 @@ The source statement is an institutional/reporting attribution used by this soft
 
 ### 3.1 PSA-delivered RData
 
-In a typical authorized workflow, an LGU may receive PSA CBMS data in an R/RData-based distribution. The original municipal workflow may use PSA-authorized R/RStudio tools and an authorized PSA RSA key to decrypt or extract that data.
+In a typical authorized workflow, an LGU may receive PSA CBMS data in an R/RData-based distribution. The original local workflow may use PSA-authorized R/RStudio tools and an authorized PSA RSA key to decrypt or extract that data.
 
-**MutiaLytics does not perform that decryption inside the current desktop application.** It does not contain a PSA RSA private key and does not bypass PSA encryption.
+**CBMS Insights does not perform that decryption inside the current desktop application.** It does not contain a PSA RSA private key and does not bypass PSA encryption.
 
 The safe separation is:
 
@@ -71,14 +73,14 @@ Authorized extraction/decryption workflow
             ↓
 Authorized JSON conversion / preparation
             ↓
-      MutiaLytics JSON Import
+      CBMS Insights JSON Import
             ↓
 Local normalization + analysis
             ↓
 Reports / exports / print
 ```
 
-This separation is intentional so that the public software package contains application logic rather than municipal raw records or decryption secrets.
+This separation is intentional so that the public software package contains application logic rather than local-area raw records or decryption secrets.
 
 ### 3.2 CBMS 2024 JSON folder
 
@@ -101,9 +103,9 @@ Additional files may be accepted when they match the system's recognized naming 
 The 2022 adapter accepts legacy household-level JSON records, including legacy CSPro-style exports whose filenames end with forms such as:
 
 ```text
-000000 Municipal, Province Name_A.json
-000000 Municipal, Province Name_B.json
-000000 Municipal, Province Name_C.json
+000000 Local Area, Province Name_A.json
+000000 Local Area, Province Name_B.json
+000000 Local Area, Province Name_C.json
 ```
 
 The import layer also detects legacy 2022 structure from the JSON record itself. The `_A`, `_B`, and `_C` records are merged by a deterministic key before conversion into the application's normalized model.
@@ -164,7 +166,7 @@ The 2024 importer keeps the normalized arrays for barangays, households, persons
 After successful import, the normalized dataset is stored in browser IndexedDB under the application database:
 
 ```text
-mutialytics-cbms-runtime
+cbms-insights-runtime
   ├── years
   │    ├── 2022
   │    └── 2024
@@ -182,7 +184,7 @@ All screens use the normalized year-specific store rather than directly reading 
 ## 5. Folder and source-code structure
 
 ```text
-cbms-mutia_system/
+cbms-insights/
 ├── .github/
 │   ├── workflows/
 │   │   ├── release.yml          # Windows release + updater assets
@@ -240,7 +242,7 @@ The repository now has an automated safety check that fails CI if these appear.
 
 ### Dashboard
 
-Provides the primary municipal overview, dataset context, counts, and navigation into the analysis modules.
+Provides the primary local-area overview, dataset context, counts, and navigation into the analysis modules.
 
 ### Comparative Analysis
 
@@ -256,7 +258,7 @@ Presents households by barangay, sorted A–Z. Household information is availabl
 
 ### Barangays
 
-Displays the municipality's barangays in A–Z order and provides barangay-based summary and reporting functions.
+Displays the selected area's barangays in A–Z order and provides barangay-based summary and reporting functions.
 
 ### Demographics
 
@@ -270,7 +272,7 @@ Sector reporting is standardized around:
 2. **By Barangay Summary**
 3. **By Barangay**
 
-The sector system is deliberately barangay-oriented instead of maintaining duplicate municipality-wide roster screens for the same population.
+The sector system is deliberately barangay-oriented instead of maintaining duplicate area-wide roster screens for the same population.
 
 The agriculture/rural group includes:
 
@@ -292,7 +294,7 @@ Provides reusable report definitions for common CBMS distributions and indicator
 
 ### Report Compendium
 
-Builds a consolidated municipal report containing report sections, summaries, barangay tables, graphs, methodology/reference notes, and year-aware source attribution. Sections with no meaningful records can be omitted instead of producing empty zero-only pages.
+Builds a consolidated local-area report containing report sections, summaries, barangay tables, graphs, methodology/reference notes, and year-aware source attribution. Sections with no meaningful records can be omitted instead of producing empty zero-only pages.
 
 ### Data Validation
 
@@ -381,7 +383,7 @@ Percentage / Rate (%)
 = numerator ÷ applicable denominator × 100
 ```
 
-The denominator is chosen from the actual statistical base of the table. It is not automatically the municipal total in every report.
+The denominator is chosen from the actual statistical base of the table. It is not automatically the overall dataset total in every report.
 
 Examples:
 
@@ -399,7 +401,7 @@ ICC/IP share
 = ICC/IP count for the category ÷ applicable ICC/IP base × 100
 ```
 
-Generated books and exports include method/reference notes so a municipal reviewer can inspect the calculation basis instead of relying on an unexplained percentage.
+Generated books and exports include method/reference notes so an authorized reviewer can inspect the calculation basis instead of relying on an unexplained percentage.
 
 ---
 
@@ -422,10 +424,10 @@ The file-export functions use password-protected encryption:
 
 Export passwords are generated using the browser's cryptographically secure random number generator.
 
-Each export receives a unique document identity, including the CBMS year, municipality, report code, timestamp, and document reference. Example:
+Each export receives a unique document identity, including the CBMS year, local area, report code, timestamp, and document reference. Example:
 
 ```text
-CBMS2024-MUTIA_PWD_2026-09-17_13-45-20_A1B2C.protected.zip
+CBMS2024_PWD_2026-09-17_13-45-20_A1B2C.protected.zip
 ```
 
 The inner report also carries the appropriate source year and document number.
@@ -516,9 +518,9 @@ Use the packaged Windows NSIS installer.
 A healthy GitHub release contains:
 
 ```text
-Mutia-Insight-Setup-X.Y.Z.exe
+CBMS-Insights-Setup-X.Y.Z.exe
 latest.yml
-Mutia-Insight-Setup-X.Y.Z.exe.blockmap
+CBMS-Insights-Setup-X.Y.Z.exe.blockmap
 ```
 
 The `.exe` is the installer. `latest.yml` is updater metadata. The blockmap supports update delivery.
@@ -528,18 +530,18 @@ The `.exe` is the installer. `latest.yml` is updater metadata. The blockmap supp
 These must match exactly:
 
 ```text
-package.json       1.2.6
-Git tag            v1.2.6
+package.json       1.2.7
+Git tag            v1.2.7
 ```
 
 Create a release:
 
 ```powershell
 git add .
-git commit -m "Release v1.2.6"
+git commit -m "Release v1.2.7"
 git push origin main
-git tag v1.2.6
-git push origin v1.2.6
+git tag v1.2.7
+git push origin v1.2.7
 ```
 
 The GitHub workflow builds the installer, validates `latest.yml`, creates one release, uploads the `.exe`, `latest.yml`, and `.blockmap`, and verifies the release assets.
@@ -547,13 +549,13 @@ The GitHub workflow builds the installer, validates `latest.yml`, creates one re
 ### What happens on a coworker's computer
 
 ```text
-Installed v1.2.5
+Installed v1.2.6
        ↓
 Internet connection
        ↓
 Check for updates
        ↓
-GitHub release v1.2.6 detected
+GitHub release v1.2.7 detected
        ↓
 Download
        ↓
@@ -561,14 +563,14 @@ Update ready
        ↓
 Restart
        ↓
-Installed v1.2.6
+Installed v1.2.7
 ```
 
 ### Why GitHub may show “Source code” archives
 
 GitHub automatically provides source archives for tags in a repository. The release workflow itself uploads only the Windows updater assets. If the repository is public, GitHub's automatically generated tag source archives can still expose the repository's source code.
 
-Therefore, **a public source repository cannot provide source-code confidentiality**. For a production municipal deployment where source confidentiality matters, use:
+Therefore, **a public source repository cannot provide source-code confidentiality**. For a production local-government deployment where source confidentiality matters, use:
 
 ```text
 PRIVATE SOURCE REPOSITORY
@@ -603,7 +605,7 @@ The repository contains automated checks for:
 Do not commit:
 
 ```text
-municipal JSON records
+local-area JSON records
 PSA RSA keys
 private keys
 .p12 / .pfx signing certificates
@@ -625,10 +627,10 @@ If a sensitive file was committed previously, deleting it from the current tree 
 Run the Windows installer:
 
 ```text
-Mutia-Insight-Setup-X.Y.Z.exe
+CBMS-Insights-Setup-X.Y.Z.exe
 ```
 
-The installer presents the single MutiaLytics EULA configured for NSIS.
+The installer presents the single CBMS Insights EULA configured for NSIS.
 
 ### Step 2 — Open the application
 
@@ -644,7 +646,7 @@ System → Settings → Security PIN
 
 Set a six-digit numeric PIN.
 
-After restarting the application, the secure Mutia unlock screen requests the PIN.
+After restarting the application, the secure CBMS unlock screen requests the PIN.
 
 ### Step 4 — Import CBMS JSON files
 
@@ -761,11 +763,11 @@ or open the Settings update panel. Internet access is required. The update syste
 
 1. Keep the original PSA/LGU-delivered data in a restricted source folder outside the application repository.
 2. Use the official/authorized upstream workflow to prepare JSON.
-3. Import the JSON into MutiaLytics.
+3. Import the JSON into CBMS Insights.
 4. Verify the import report.
 5. Keep exported archives and passwords under separate controls.
 6. Do not attach raw CBMS JSON files to GitHub issues, pull requests, email threads, or public cloud folders.
-7. Before sharing a report outside authorized municipal personnel, review whether names, addresses, IDs, health, education, income, or other personal information should be removed or aggregated.
+7. Before sharing a report outside authorized local-government personnel, review whether names, addresses, IDs, health, education, income, or other personal information should be removed or aggregated.
 8. Clear the application runtime cache when the workstation is transferred to a different authorized user and the local data should no longer remain there.
 
 ---
@@ -878,7 +880,7 @@ Packaged Windows builds use `electron-updater` with GitHub Release metadata (`la
 
 ## 19. Legal and policy considerations
 
-MutiaLytics is intended as a processing/analytics utility. Users and the responsible LGU must ensure that each data-handling activity is authorized and appropriate under applicable law and policy.
+CBMS Insights is intended as a processing/analytics utility. Users and the responsible LGU must ensure that each data-handling activity is authorized and appropriate under applicable law and policy.
 
 ### Republic Act No. 10173 — Data Privacy Act of 2012
 
@@ -899,17 +901,17 @@ Official reference:
 
 ### Important disclaimer
 
-The README and EULA are project documentation, not legal advice. Municipal officials should coordinate with the LGU Data Protection Officer, records-management officials, PSA, NPC, and legal counsel as appropriate.
+The README and EULA are project documentation, not legal advice. Authorized officials should coordinate with the LGU Data Protection Officer, records-management officials, PSA, NPC, and legal counsel as appropriate.
 
 ---
 
 ## 20. Project history and motivation
 
-This project grew from the observation that municipal CBMS training and reporting can place a heavy technical burden on personnel who do not routinely write code. The developer used prior knowledge of Python and web development to prepare the JSON conversion/normalization workflow and build a desktop application that makes the prepared data usable through guided municipal interfaces.
+This project grew from the observation that local CBMS training and reporting can place a heavy technical burden on personnel who do not routinely write code. The developer used prior knowledge of Python and web development to prepare the JSON conversion/normalization workflow and build a desktop application that makes the prepared data usable through guided interfaces.
 
 The project therefore emphasizes:
 
-- no-code municipal reporting;
+- no-code local reporting;
 - readable barangay tables;
 - repeatable calculations;
 - year-separated 2022/2024 analysis;
@@ -917,7 +919,7 @@ The project therefore emphasizes:
 - printable government-style reports;
 - a maintainable local desktop workflow.
 
-The application's current scope intentionally keeps raw municipal datasets outside the software repository and outside the published application package.
+The application's current scope intentionally keeps raw local-area datasets outside the software repository and outside the published application package.
 
 ---
 
@@ -926,13 +928,13 @@ The application's current scope intentionally keeps raw municipal datasets outsi
 **Developer** — Kiven Cantila  
 **UI/UX Designer** — Clifford Kevin Bohol  
 **Tester** — Fredrich Cabasag  
-**Institution / Intended Office** — Municipal Planning and Development Office, Municipality of Mutia, Zamboanga del Norte
+**Intended users** — Authorized CBMS data custodians and local-government analysts
 
 ---
 
 ## 22. Final source-tree safety rule
 
-The project is intended to be publishable without municipal CBMS records.
+The project is intended to be publishable without local-area CBMS records.
 
 Before every commit/release:
 
@@ -941,3 +943,13 @@ npm run validate:project
 ```
 
 A successful validation means the source tree contains no detected raw CBMS JSON/RData files, generated installers, blockmaps, updater manifests, private key material, or duplicate installer EULA files.
+
+
+## Credits
+
+**Developer:** Kiven Cantila  
+**Facebook:** https://www.facebook.com/hello.kwekwe  
+**UI/UX Designer:** Clifford Kevin Bohol  
+**Tester:** Fredrich Cabasag  
+
+CBMS Insights is a generic CBMS processing and analytics utility designed for authorized users across different local areas.

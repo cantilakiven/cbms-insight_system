@@ -324,7 +324,7 @@ button:active { transform: scale(.98); }
 }
 
 /* ========================================================================
-   MUTIA MUNICIPAL DESIGN SYSTEM — COMPACT GOVERNMENT UI
+   CBMS INSIGHTS DESIGN SYSTEM — COMPACT GOVERNMENT UI
    ======================================================================== */
 :root {
   --gov-navy: oklch(0.27 0.055 255);
@@ -540,7 +540,7 @@ button:active { transform: scale(.98); }
 }
 
 /* ========================================================================
-   MUTIA DESKTOP REDESIGN — CLEAN / SLATE / INDIGO
+   CBMS INSIGHTS DESKTOP REDESIGN — CLEAN / SLATE / INDIGO
    ======================================================================== */
 :root {
   --primary: oklch(0.46 0.19 270);
@@ -759,7 +759,7 @@ body {
 .page-container .rounded-xl.border.border-border.bg-card:hover,
 .page-container .rounded-2xl.border.border-border.bg-card:hover { box-shadow:none !important; transform:none !important; }
 
-/* Municipal banner — deliberately wide at a 12:3 visual ratio. */
+/* Community data banner — deliberately wide at a 12:3 visual ratio. */
 .dashboard-page { max-width: none; }
 .dashboard-hero-compact {
   position:relative;

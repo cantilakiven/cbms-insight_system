@@ -3,7 +3,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { BlobWriter, ZipWriter, TextReader, BlobReader } from "@zip.js/zip.js";
 import { getSourceWatermark } from "@/data/cbms";
-import { municipality, getActiveYear, type DataYear } from "@/data/cbms";
+import { coverageLabel, getActiveYear, type DataYear } from "@/data/cbms";
 import { addExportLog, generatePassword, makeExportId, getExpectedSavedPath, saveBlobWithPrompt, emitExportPassword } from "./export-log";
 
 export interface ExportColumn {
@@ -161,7 +161,7 @@ export function buildPrintHtml(payload: GroupedExportPayload): string {
   const sbRows = barangaySummaryRows || [];
   const source = getSourceWatermark(resolveExportYear(title, subtitle, dataYear));
   const rowsPerPage = columns.length >= 10 ? 24 : columns.length >= 7 ? 30 : 36;
-  const pageHeader = (pageNo: number, label?: string) => `<header class="report-head">${pageNo === 1 ? `<div class="eyebrow">Mutia · Community-Based Monitoring System</div>` : ""}<h1>${escapePrintHtml(label || title)}</h1><p>${escapePrintHtml(subtitle || `Municipality: ${municipality}`)}</p><p class="meta">Generated: ${escapePrintHtml(new Date().toLocaleString())} · Page ${pageNo}</p></header>`;
+  const pageHeader = (pageNo: number, label?: string) => `<header class="report-head">${pageNo === 1 ? `<div class="eyebrow">CBMS · Community-Based Monitoring System</div>` : ""}<h1>${escapePrintHtml(label || title)}</h1><p>${escapePrintHtml(subtitle || `Coverage: ${coverageLabel}`)}</p><p class="meta">Generated: ${escapePrintHtml(new Date().toLocaleString())} · Page ${pageNo}</p></header>`;
   const renderTable = (tableRows: Record<string, any>[]) => `<table><thead><tr>${columns.map((c) => `<th>${escapePrintHtml(c.label)}</th>`).join("")}</tr></thead><tbody>${tableRows.map((r) => `<tr>${columns.map((c) => `<td>${escapePrintHtml(getVal(r, c.key))}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
   const pages: string[] = [];
 
@@ -248,7 +248,7 @@ function makeDocId(title: string, subtitle?: string, dataYear?: DataYear): DocId
   return {
     year,
     docTitle: `${title} — Doc. No. ${ref}`,
-    base: `CBMS${year}-${safeName(municipality).toUpperCase()}_${reportCode(title)}_${s.slug}_${ref.split("-").pop()!.toUpperCase()}`,
+    base: `CBMS${year}_${reportCode(title)}_${s.slug}_${ref.split("-").pop()!.toUpperCase()}`,
     ref,
     generatedAt: s.human,
   };
@@ -266,7 +266,7 @@ async function packageProtected(
   const reader = typeof data === "string" ? new TextReader(data) : new BlobReader(data);
   await writer.add(innerFilename, reader);
   const readme =
-`Encrypted export from Local Data — Municipal CBMS Analytics.
+`Encrypted export from CBMS Insights — secure local data export.
 
 Document No.  : ${meta.doc.ref}
 Report        : ${meta.title}
@@ -274,7 +274,7 @@ File inside   : ${innerFilename}
 Records       : ${meta.rowCount}
 Format        : ${meta.format}
 Generated     : ${meta.doc.generatedAt}
-Municipality  : ${municipality}
+Coverage       : Selected Local Area
 
 To open: use 7-Zip, WinRAR, or the built-in extractor on macOS/Linux with the
 password provided by the person who sent you this archive. This archive is
@@ -323,7 +323,7 @@ export async function exportCSV({ title, subtitle, columns, rows, note, summary,
     ? `SUMMARY\n${summary.map((s) => `"${s.label}",${s.value},${s.percentage == null ? "" : `${s.percentage.toFixed(2)}%`}`).join("\n")}\n\n`
     : "";
   const csv =
-    `${doc.docTitle}\n"Municipality","${municipality}"\n"Generated","${doc.generatedAt}"\n\n` +
+    `${doc.docTitle}\n"Coverage","${coverageLabel}"\n"Generated","${doc.generatedAt}"\n\n` +
     `${summaryBlock}${header}\n${body}\n${totalLine}\n\n${note || getSourceWatermark(doc.year)}`;
   await packageProtected(`${doc.base}.csv`, csv, { format: "CSV", title, rowCount: rows.length, doc });
 }
@@ -413,7 +413,7 @@ export async function exportXLSX({ title, subtitle, columns, rows, note, summary
   bandRow(r, S.title);
   merges.push({ s: { r, c: 0 }, e: { r, c: nCols - 1 } });
   r++;
-  put(r, 0, `${subtitle || `Municipality: ${municipality}`}  ·  Generated: ${doc.generatedAt}`, S.subtitle);
+  put(r, 0, `${subtitle || `Coverage: ${coverageLabel}`}  ·  Generated: ${doc.generatedAt}`, S.subtitle);
   bandRow(r, S.subtitle);
   merges.push({ s: { r, c: 0 }, e: { r, c: nCols - 1 } });
   r += 2;
@@ -549,7 +549,7 @@ function simpleDocxTable(columns: ExportColumn[], rows: Record<string, any>[], t
 }
 async function buildGenericDocx(payload: GroupedExportPayload): Promise<Blob> {
   const parts:string[]=[];
-  parts.push(`<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="100"/></w:pPr>${simpleDocxRun(municipality,true)}</w:p>`);
+  parts.push(`<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="100"/></w:pPr>${simpleDocxRun(coverageLabel,true)}</w:p>`);
   parts.push(`<w:p><w:pPr><w:jc w:val="center"/></w:pPr>${simpleDocxRun(payload.title,true)}</w:p>`);
   if(payload.subtitle) parts.push(`<w:p><w:pPr><w:jc w:val="center"/></w:pPr>${simpleDocxRun(payload.subtitle)}</w:p>`);
   if(payload.summary?.length){ parts.push(`<w:p>${simpleDocxRun("SUMMARY",true)}</w:p>`); parts.push(simpleDocxTable([{key:"label",label:"Indicator"},{key:"value",label:"Count / Value"},{key:"percentage",label:"Percentage Rate / Population"}], payload.summary.map(s=>({label:s.label,value:s.value,percentage:s.percentage==null?"":`${s.percentage.toFixed(2)}%`})), payload.summary.length)); }
@@ -600,8 +600,8 @@ export async function exportPDF(payload: GroupedExportPayload) {
     pdf.setFontSize(8.2);
     pdf.setTextColor(86, 96, 110);
     const line = continuation
-      ? `${pdfPeso(subtitle || `Municipality: ${municipality}`)} · Continuation`
-      : pdfPeso(subtitle || `Municipality: ${municipality}`);
+      ? `${pdfPeso(subtitle || `Coverage: ${coverageLabel}`)} · Continuation`
+      : pdfPeso(subtitle || `Coverage: ${coverageLabel}`);
     const lines = pdf.splitTextToSize(line, usableWidth);
     pdf.text(lines, margin, y);
     y += lines.length * 4 + 4;

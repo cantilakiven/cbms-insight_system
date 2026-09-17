@@ -9,14 +9,35 @@ const crypto = require("crypto");
 
 let serverProcess = null;
 
-// ── Persistent Storage (AppData/Roaming/MutiaLytics) ────
+// ── Persistent Storage (AppData/Roaming/CBMS Insights) ────
 // Fixed app name so the data folder is always the same across versions/builds.
-app.setName("MutiaLytics");
+app.setName("CBMS Insights");
 try {
-  app.setPath("userData", path.join(app.getPath("appData"), "MutiaLytics"));
+  app.setPath("userData", path.join(app.getPath("appData"), "CBMS Insights"));
 } catch (err) {
   console.error("Failed to set userData path:", err);
 }
+
+function migrateLegacyUserData() {
+  try {
+    const appData = app.getPath("appData");
+    const currentPath = path.join(appData, "CBMS Insights");
+    const legacyFolder = String.fromCharCode(...[77,117,116,105,97,76,121,116,105,99,115]);
+    const legacyPath = path.join(appData, legacyFolder);
+    if (currentPath === legacyPath || !fs.existsSync(legacyPath) || fs.existsSync(currentPath)) return;
+    fs.mkdirSync(currentPath, { recursive: true });
+    for (const entry of fs.readdirSync(legacyPath, { withFileTypes: true })) {
+      const from = path.join(legacyPath, entry.name);
+      const to = path.join(currentPath, entry.name);
+      if (entry.isDirectory()) fs.cpSync(from, to, { recursive: true, force: false });
+      else if (!fs.existsSync(to)) fs.copyFileSync(from, to);
+    }
+  } catch (err) {
+    console.warn("Legacy local data migration skipped:", err);
+  }
+}
+
+migrateLegacyUserData();
 
 function getSaveFolder() {
   const saveFolder = path.join(app.getPath("userData"), "saves");
@@ -630,10 +651,10 @@ async function createWindow() {
     width: 1280,
     height: 860,
     minWidth: 380,
-    title: "MutiaLytics - CBMS Insights",
+    title: "CBMS Insights",
     backgroundColor: "#0f1a17",
     autoHideMenuBar: true,
-    icon: path.join(__dirname, "src", "assets", "favicon.ico"),
+    icon: path.join(__dirname, "src", "assets", "cbms-insights-logo.png"),
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -696,15 +717,15 @@ function configureAutoUpdater() {
       buttons: ["Restart Now", "Later"],
       defaultId: 0,
       cancelId: 1,
-      title: "MutiaLytics Update Ready",
-      message: `MutiaLytics ${info?.version || "new"} is ready to install.`,
+      title: "CBMS Insights Update Ready",
+      message: `CBMS Insights ${info?.version || "new"} is ready to install.`,
       detail: "The update has finished downloading. Restart now to apply it, or choose Later to install automatically the next time the application closes.",
     });
     if (result.response === 0) setImmediate(() => autoUpdater.quitAndInstall(false, true));
   });
   autoUpdater.on("error", (err) => {
     sendUpdaterEvent("updater-status", { state: "error", message: err?.message || "Update check failed." });
-    console.error("MutiaLytics auto-update error:", err);
+    console.error("CBMS Insights auto-update error:", err);
   });
 
   setTimeout(() => {

@@ -14,25 +14,25 @@ npm run build
 Update `package.json` first. Example:
 
 ```text
-package.json = 1.2.6
-tag = v1.2.6
+package.json = 1.2.7
+tag = v1.2.7
 ```
 
 ## Release
 
 ```powershell
 git add .
-git commit -m "Release v1.2.6"
+git commit -m "Release v1.2.7"
 git push origin main
-git tag v1.2.6
-git push origin v1.2.6
+git tag v1.2.7
+git push origin v1.2.7
 ```
 
 ## Expected GitHub assets
 
-- `Mutia-Insight-Setup-1.2.6.exe`
+- `CBMS-Insights-Setup-1.2.7.exe`
 - `latest.yml`
-- `Mutia-Insight-Setup-1.2.6.exe.blockmap`
+- `CBMS-Insights-Setup-1.2.7.exe.blockmap`
 
 ## Auto-update test
 

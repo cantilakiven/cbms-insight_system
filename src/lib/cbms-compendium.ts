@@ -9,12 +9,11 @@
  *   2) By-barangay summary table
  *   3) One detailed person table per barangay
  */
-import { getDataVersion, getHouseholdIncome, getYearDatasets, municipality, type DataYear } from "@/data/cbms";
+import { getDataVersion, getHouseholdIncome, getYearDatasets, coverageLabel, type DataYear } from "@/data/cbms";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { BlobReader, BlobWriter, ZipWriter, TextReader } from "@zip.js/zip.js";
-import logoUrl from "@/assets/mutia-logo.png?inline";
-import hallUrl from "@/assets/mutia-municipal-hall.jpg?inline";
+import logoUrl from "@/assets/cbms-insights-logo.png?inline";
 import { REPORTS, frequency } from "./cbms-report-defs";
 import { getMealFrequency, isUnderThreeMeals } from "./food-frequency";
 import { addExportLog, generatePassword, makeExportId, saveBlobWithPrompt, emitExportPassword, emitPrintPreview } from "./export-log";
@@ -462,7 +461,7 @@ function buildComparativeSection(barangay: string): BookSection {
     .filter((r) => r.y2022 != null && r.y2024 != null)
     .sort((a, b) => Math.abs((b.change ?? 0)) - Math.abs((a.change ?? 0)))
     .map((r, i) => ({ rank: i + 1, indicator: r.indicator, group: r.group, y2022: r.y2022, y2024: r.y2024, change: r.change, percent_change: r.percent_change }));
-  const basis = barangay ? `Barangay ${barangay}` : "Municipality-wide";
+  const basis = barangay ? `Barangay ${barangay}` : "Area-wide";
   return {
     id: "comparative",
     title: "Comparative Analysis — CBMS 2022 vs 2024",
@@ -536,7 +535,7 @@ export function buildBook({ year, barangay = "", sections, includeNameLists = fa
     out.push({
       id: "overview",
       title: "Municipal Overview",
-      intro: `Headline indicators for CBMS ${year}${barangay ? `, Barangay ${barangay}` : ", municipality-wide"}.`,
+      intro: `Headline indicators for CBMS ${year}${barangay ? `, Barangay ${barangay}` : ", area-wide"}.`,
       tables: [
         table("ov-key", `Key Indicators - CBMS ${year}`, [{ key: "indicator", label: "Indicator" }, { key: "value", label: "Count / Value" }, { key: "share", label: "Percentage Rate (%Rate)" }], ind),
         table("ov-svc", `Household Services and Tenure - CBMS ${year}`, [{ key: "service", label: "Household condition" }, { key: "value", label: "Households" }, { key: "share", label: "Percentage of households (%Population)" }], svc),
@@ -618,7 +617,7 @@ export function buildBook({ year, barangay = "", sections, includeNameLists = fa
         { key: "female", label: "Female" },
         { key: "households", label: "Households" },
         { key: "average_size", label: "Avg. household size" },
-        { key: "share", label: "Percentage of municipal population (%Population)" },
+        { key: "share", label: "Percentage of population (%Population)" },
       ], rows)],
     });
   }
@@ -925,10 +924,10 @@ export function buildBook({ year, barangay = "", sections, includeNameLists = fa
 
   return {
     year,
-    title: `CBMS ${year} Municipality of Mutia`,
+    title: `CBMS ${year} Selected Local Area`,
     subtitle: `Community-Based Monitoring System - Consolidated Statistical Report`,
     generatedAt: new Date().toLocaleString(),
-    scope: barangay ? `Barangay ${barangay}` : "Municipality-wide",
+    scope: barangay ? `Barangay ${barangay}` : "Area-wide",
     sections: filteredSections,
   };
 }
@@ -1060,12 +1059,12 @@ export function buildBookHtml(book: ReportBook): string {
 <html lang="en"><head><meta charset="utf-8"><title>${esc(book.title)}</title>
 <style>
 @page{size:215.9mm 330.2mm;margin:12mm 14mm 16mm}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#fff;color:#25313f;font-family:Arial,Helvetica,sans-serif;font-size:9.5pt;line-height:1.35}
-.cover{height:302mm;display:flex;flex-direction:column;break-after:page;background:#0e3768;color:#fff;overflow:hidden}.cover-top{height:73mm;padding:7mm 12mm 5mm;text-align:center;background:#0e3768;display:flex;flex-direction:column;align-items:center;justify-content:center}.cover-logo{width:34mm;height:34mm;object-fit:contain;margin-bottom:4mm}.cover-top .republic{font-size:12pt;letter-spacing:.04em;line-height:1.15}.cover-top .province{font-size:11.5pt;line-height:1.15;margin-top:1mm}.cover-top .municipality{font-size:16pt;font-weight:800;line-height:1.05;margin-top:1.5mm;text-transform:uppercase}.cover-photo{position:relative;height:164mm;background-image:linear-gradient(rgba(255,255,255,.56),rgba(255,255,255,.78)),url('${hallUrl}');background-size:cover;background-position:center}.cover-photo::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,.72))}.cover-center{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:5mm 12mm}.cover-year{font-size:34pt;line-height:.95;font-weight:900;letter-spacing:.02em;color:#173d6d;text-shadow:0 1px 0 #fff,2px 2px 0 rgba(255,255,255,.88);text-transform:uppercase}.cover-title{font-size:28pt;line-height:.94;font-weight:900;letter-spacing:.03em;color:#173d6d;text-shadow:0 1px 0 #fff,2px 2px 0 rgba(255,255,255,.88);text-transform:uppercase;margin-top:3mm}.cover-subtitle{margin-top:8mm;padding:4mm 8mm;font-size:12pt;font-weight:700;line-height:1.25;color:#111;background:rgba(255,255,255,.78);max-width:175mm}.cover-meta{margin-top:5mm;font-size:10.5pt;line-height:1.45;color:#111;background:rgba(255,255,255,.74);padding:3mm 8mm;max-width:150mm}.cover-bottom{height:65mm;padding:7mm 10mm;background:#062552;display:flex;align-items:center;justify-content:space-between;gap:8mm}.cover-source{min-width:47mm;border-left:1px solid rgba(255,255,255,.6);padding-left:7mm}.cover-source .label{font-size:8pt;letter-spacing:.14em;text-transform:uppercase;color:#d9e4f2}.cover-source .office{margin-top:3mm;font-size:11pt;font-weight:800;line-height:1.25;text-transform:uppercase}.cover-info{flex:1;text-align:right;font-size:9pt;line-height:1.55;color:#dbe7f5}.cover-info strong{color:#fff}
+.cover{height:302mm;display:flex;flex-direction:column;break-after:page;background:linear-gradient(145deg,#0b2340,#174c7f 58%,#0e6a8d);color:#fff;overflow:hidden}.cover-top{height:235mm;padding:10mm 12mm;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}.cover-logo{width:42mm;height:42mm;object-fit:contain;margin-bottom:5mm;filter:drop-shadow(0 10px 24px rgba(0,0,0,.25))}.cover-kicker{font-size:9pt;letter-spacing:.22em;line-height:1.15;font-weight:800;text-transform:uppercase;color:#cfe9f7}.cover-title{font-size:31pt;line-height:1;font-weight:900;letter-spacing:.02em;text-transform:uppercase;margin-top:3mm}.cover-subtitle{margin-top:8mm;padding:4mm 8mm;font-size:12pt;font-weight:700;line-height:1.25;color:#0b2239;background:rgba(255,255,255,.9);max-width:175mm;border-radius:3mm}.cover-meta{margin-top:5mm;font-size:10.5pt;line-height:1.45;color:#10314d;background:rgba(255,255,255,.85);padding:3mm 8mm;max-width:150mm;border-radius:3mm}.cover-bottom{height:67mm;padding:8mm 12mm;background:rgba(2,18,35,.45);display:flex;align-items:center;justify-content:center;gap:8mm;text-align:center}.cover-info{font-size:9pt;line-height:1.55;color:#dbe7f5}.cover-info strong{color:#fff}
 .toc{break-after:page;padding-bottom:6mm}.toc h2{font-size:18pt;color:#163b66;border-bottom:1px solid #163b66;padding-bottom:3mm;margin:0 0 6mm}.toc-part{margin:0 0 3mm;border:1px solid #d5dde6;border-radius:2.5mm;overflow:hidden;break-inside:avoid}.toc-part summary{padding:3mm 4mm;background:#eef2f6;color:#163b66;font-weight:800;cursor:pointer}.toc-part summary::marker{color:#163b66}.toc-part summary a{text-decoration:none;color:inherit}.toc-part ol{margin:0;padding:1.5mm 5mm 3mm 10mm;list-style:none}.toc-part li{border-bottom:.35pt dotted #c4ccd6;padding:1.2mm 0}.toc-part a{color:#283544;text-decoration:none}.toc-l1 a{font-weight:700}.toc-l2{padding-left:6mm!important;font-size:8.2pt}.toc-l2:before{content:"↳ ";color:#8a97a6}
 .part{break-before:page}.part-head{border-bottom:1.1px solid #163b66;padding-bottom:4mm;margin-bottom:6mm}.part-head .kicker{font-size:8pt;letter-spacing:.2em;text-transform:uppercase;color:#66788b;font-weight:800}.part-head h2{font-size:19pt;line-height:1.1;margin:2mm 0;color:#163b66}.part-head p{margin:0;font-size:9pt;color:#4e5e6f}.tbl{break-inside:auto;margin-bottom:7mm}.tbl.barangay-detail{break-before:page}.tbl h3{font-size:10.8pt;line-height:1.2;margin:0 0 2.5mm;color:#1b2d42}.tbl.barangay-detail h3{font-size:16pt;margin-bottom:4mm;padding-bottom:3mm;border-bottom:1.1px solid #cbd4df}.tbl.barangay-detail h3:before{content:"Barangay detail";display:block;font-size:7.5pt;letter-spacing:.16em;text-transform:uppercase;color:#68798b;margin-bottom:1mm}table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{border:.45pt solid #bfc8d2;padding:1.65mm 1.8mm;font-size:8.1pt;word-break:break-word;vertical-align:top}th{background:#dfe5ec;font-weight:800;text-align:left;color:#1f2933}td.data,td.lbl{text-align:left}tbody tr:nth-child(even) td{background:#fafbfc}tr.total td{background:#eef1f5;font-weight:800;border-top:1px solid #7f8b97}thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}.src{margin:1.6mm 0 0;font-size:7pt;color:#687789}.comparison-chart{break-inside:avoid;padding:3mm 0}.cmp-chart{display:grid;gap:4mm}.cmp-row{border:1px solid #d7dfe8;border-radius:2mm;padding:3mm}.cmp-label{font-weight:800;color:#1f3348;margin-bottom:2mm}.cmp-line{display:grid;grid-template-columns:10mm 1fr 22mm;align-items:center;gap:2mm;margin-top:1.3mm;font-size:7.5pt}.cmp-year{font-weight:800;color:#64748b}.cmp-track{height:3.5mm;background:#eef2f6;border-radius:99px;overflow:hidden}.cmp-bar{height:100%;border-radius:99px}.cmp-bar.y22{background:#355b8c}.cmp-bar.y24{background:#4e8a67}
 @media screen{body{padding:8mm;max-width:216mm;margin:0 auto;background:#eef2f6}.cover,.toc,.part{background:#fff}.toc-part summary{position:sticky;top:0}}
 </style></head><body>
-<section class="cover"><div class="cover-top"><img class="cover-logo" src="${logoUrl}" alt="Municipality of Mutia seal"><div class="republic">REPUBLIC OF THE PHILIPPINES</div><div class="province">PROVINCE OF ZAMBOANGA DEL NORTE</div><div class="municipality">MUNICIPALITY OF MUTIA</div></div><div class="cover-photo"><div class="cover-center"><div class="cover-year">CBMS ${esc(book.year)}</div><div class="cover-title">Municipality of Mutia</div><div class="cover-subtitle">Community-Based Monitoring System - Consolidated Statistical Report</div><div class="cover-meta"><strong>Data year:</strong> CBMS ${esc(book.year)}<br><strong>Coverage:</strong> ${esc(book.scope)}<br><strong>Parts included:</strong> ${book.sections.length}<br><strong>Tables:</strong> ${book.sections.reduce((n,s)=>n+s.tables.length,0)}</div></div></div><div class="cover-bottom"><div class="cover-source"><div class="label">SOURCE</div><div class="office">MUNICIPAL PLANNING AND DEVELOPMENT OFFICE</div></div><div class="cover-info"><div><strong>CBMS ${esc(book.year)} Municipality of Mutia</strong></div><div>Generated: ${esc(book.generatedAt)}</div></div></div></section>
+<section class="cover"><div class="cover-top"><img class="cover-logo" src="${logoUrl}" alt="CBMS Insights logo"><div class="cover-kicker">Community-Based Monitoring System</div><div class="cover-title">CBMS Insights</div><div class="cover-subtitle">Consolidated Statistical Report</div><div class="cover-meta"><strong>Data year:</strong> CBMS ${esc(book.year)}<br><strong>Coverage:</strong> ${esc(book.scope)}<br><strong>Parts included:</strong> ${book.sections.length}<br><strong>Tables:</strong> ${book.sections.reduce((n,s)=>n+s.tables.length,0)}</div></div><div class="cover-bottom"><div class="cover-info"><div><strong>CBMS ${esc(book.year)} · Generated report</strong></div><div>${esc(book.generatedAt)}</div></div></div></section>
 <section class="toc"><h2>Table of Contents</h2><p style="margin:0 0 5mm;color:#657487;font-size:8.5pt">Click any part, report, or detailed roster to jump directly to that section.</p>${tocHtml}</section>${body}
 </body></html>`;
 }
@@ -1105,25 +1104,19 @@ function dataUrlParts(dataUrl: string) {
 function addCoverToPdf(pdf: jsPDF, book: ReportBook) {
   const w = pdf.internal.pageSize.getWidth();
   const h = pdf.internal.pageSize.getHeight();
-  pdf.setFillColor(14, 55, 104); pdf.rect(0, 0, w, 74, "F");
-  try { pdf.addImage(logoUrl, "PNG", (w - 32) / 2, 6, 32, 32); } catch {}
-  pdf.setTextColor(255,255,255); pdf.setFont("helvetica","normal"); pdf.setFontSize(12); pdf.text("REPUBLIC OF THE PHILIPPINES", w/2, 45, {align:"center"});
-  pdf.setFontSize(11.5); pdf.text("PROVINCE OF ZAMBOANGA DEL NORTE", w/2, 52, {align:"center"});
-  pdf.setFont("helvetica","bold"); pdf.setFontSize(16); pdf.text("MUNICIPALITY OF MUTIA", w/2, 62, {align:"center"});
-
-  try { pdf.addImage(hallUrl, "JPEG", 0, 74, w, 165); } catch { pdf.setFillColor(236, 215, 217); pdf.rect(0,74,w,165,"F"); }
-  // Keep the municipal hall visible, with a clean white title panel over the center.
-  pdf.setFillColor(255,255,255); pdf.roundedRect(14, 106, w-28, 104, 3, 3, "F");
-  pdf.setTextColor(23,61,109); pdf.setFont("helvetica","bold"); pdf.setFontSize(34); pdf.text(`CBMS ${book.year}`, w/2, 125, {align:"center"});
-  pdf.setFontSize(27); pdf.text("MUNICIPALITY OF MUTIA", w/2, 147, {align:"center"});
-  pdf.setFillColor(255,255,255); pdf.roundedRect(20, 166, w-40, 29, 2, 2, "F");
-  pdf.setTextColor(20,20,20); pdf.setFontSize(11.5); pdf.text("Community-Based Monitoring System - Consolidated Statistical Report", w/2, 178, {align:"center", maxWidth:w-48});
-  pdf.setFontSize(10); pdf.text(`Data year: CBMS ${book.year}`, w/2, 188, {align:"center"});
-  pdf.text(`Coverage: ${book.scope}`, w/2, 193, {align:"center"});
-
-  pdf.setFillColor(6,37,82); pdf.rect(0,239,w,91,"F");
-  pdf.setTextColor(225,235,246); pdf.setFont("helvetica","normal"); pdf.setFontSize(8); pdf.text("SOURCE", 18, 255); pdf.setFont("helvetica","bold"); pdf.setFontSize(11); pdf.text("MUNICIPAL PLANNING AND DEVELOPMENT OFFICE", 18, 265);
-  pdf.setFont("helvetica","normal"); pdf.setFontSize(8.5); pdf.text(`CBMS ${book.year} Municipality of Mutia`, w-18, 258, {align:"right"}); pdf.text(`Generated: ${book.generatedAt}`, w-18, 265, {align:"right"});
+  pdf.setFillColor(11,35,64); pdf.rect(0, 0, w, h, "F");
+  pdf.setFillColor(23,76,127); pdf.rect(0, 0, w, 105, "F");
+  try { pdf.addImage(logoUrl, "PNG", (w - 46) / 2, 16, 46, 46); } catch {}
+  pdf.setTextColor(210,236,247); pdf.setFont("helvetica","bold"); pdf.setFontSize(11); pdf.text("COMMUNITY-BASED MONITORING SYSTEM", w/2, 72, {align:"center"});
+  pdf.setTextColor(255,255,255); pdf.setFontSize(28); pdf.text("CBMS INSIGHTS", w/2, 89, {align:"center"});
+  pdf.setFillColor(255,255,255); pdf.roundedRect(14, 118, w-28, 112, 4, 4, "F");
+  pdf.setTextColor(23,61,109); pdf.setFont("helvetica","bold"); pdf.setFontSize(32); pdf.text(`CBMS ${book.year}`, w/2, 145, {align:"center"});
+  pdf.setFontSize(17); pdf.text("Consolidated Statistical Report", w/2, 163, {align:"center"});
+  pdf.setTextColor(70,82,98); pdf.setFont("helvetica","normal"); pdf.setFontSize(10); pdf.text(`Coverage: ${book.scope}`, w/2, 180, {align:"center"});
+  pdf.text(`Generated: ${book.generatedAt}`, w/2, 188, {align:"center"});
+  pdf.setFillColor(6,37,82); pdf.rect(0, 248, w, 82, "F");
+  pdf.setTextColor(225,235,246); pdf.setFont("helvetica","bold"); pdf.setFontSize(9); pdf.text("CBMS INSIGHTS", w/2, 271, {align:"center"});
+  pdf.setFont("helvetica","normal"); pdf.setFontSize(8.5); pdf.text("Community data • analysis • reporting • secure export", w/2, 282, {align:"center"});
 }
 
 function pdfSafeText(value: any): string {
@@ -1276,7 +1269,7 @@ function addPdfPageFooter(pdf: jsPDF, book: ReportBook, page: number) {
   pdf.setFont("helvetica", "normal");
   pdf.setTextColor(98, 108, 121);
   pdf.setFontSize(7);
-  pdf.text(`CBMS ${book.year} Municipality of Mutia`, 14, h - 7);
+  pdf.text(`CBMS ${book.year} Selected Local Area`, 14, h - 7);
   pdf.text(`Page ${page}`, w - 14, h - 7, { align: "right" });
 }
 
@@ -1296,8 +1289,8 @@ function compendiumFileBase(book: ReportBook) {
   const d = new Date();
   const p = (n: number) => String(n).padStart(2, "0");
   const stamp = `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}`;
-  const scope = book.scope && book.scope !== "All barangays (municipality-wide)" ? String(book.scope).replace(/[^a-z0-9]+/gi,"_").replace(/^_+|_+$/g,"").toUpperCase() : "MUNICIPALITY";
-  return `CBMS${book.year}-MUTIA_COMPENDIUM_${scope}_${stamp}_${makeExportId().replace("EXP-", "")}`;
+  const scope = book.scope && book.scope !== "All barangays (area-wide)" ? String(book.scope).replace(/[^a-z0-9]+/gi,"_").replace(/^_+|_+$/g,"").toUpperCase() : "ALL_AREA";
+  return `CBMS${book.year}_COMPENDIUM_${scope}_${stamp}_${makeExportId().replace("EXP-", "")}`;
 }
 
 async function packageCompendiumProtected(
@@ -1312,7 +1305,7 @@ async function packageCompendiumProtected(
   const writer = new ZipWriter(zipBlobWriter, { password: resolvedPassword, encryptionStrength: 3 });
   await writer.add(innerFilename, new BlobReader(data));
   const readme =
-`Protected CBMS Report Compendium
+`Protected CBMS Insights Report Compendium
 
 Document: ${book.title}
 Data year: CBMS ${book.year}
@@ -1324,7 +1317,7 @@ The ${format} document inside this archive is protected by an AES-256 encrypted 
 Keep this password separate from the archive when sharing the report.
 
 Password protection: AES-256
-${municipality}
+Coverage: Selected Local Area
 `;
   await writer.add("README.txt", new TextReader(readme));
   await writer.close();
@@ -1380,9 +1373,9 @@ async function buildPasswordProtectedHtml(html: string): Promise<{ blob: Blob; p
   const filename = `${titleBase}_${new Date().toISOString().replace(/[-:]/g, "").replace(/\..*$/, "")}_${fileToken}.protected.html`;
   const shell = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Protected CBMS Compendium</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>
 body{margin:0;background:linear-gradient(135deg,#0b2748,#eef4fa 55%,#dfe9f3);color:#1f2937;font-family:Arial,Helvetica,sans-serif;min-height:100vh;display:grid;place-items:center;padding:24px;box-sizing:border-box}.card{width:min(520px,100%);background:rgba(255,255,255,.96);border:1px solid #d7dee7;border-radius:18px;padding:28px;box-shadow:0 12px 40px rgba(15,23,42,.1)}.brand{display:flex;align-items:center;gap:12px}.logo{width:58px;height:58px;object-fit:contain;border-radius:14px;border:1px solid #d6e0ea;background:#fff;padding:5px}.shield{font-size:30px}.kicker{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#52667d}.card h1{margin:8px 0 6px;font-size:24px}.card p{color:#63748a;line-height:1.5}.row{display:flex;gap:8px;margin-top:18px}.row input{flex:1;border:1px solid #c7d2df;border-radius:10px;padding:11px 12px;font-size:15px}.row button{border:0;border-radius:10px;padding:0 16px;background:#173d6d;color:#fff;font-weight:800;cursor:pointer}.msg{margin-top:12px;font-size:13px;color:#8a3f0b;min-height:18px}.small{font-size:12px;color:#7b8898;margin-top:14px}
-</style></head><body><main class="card"><div class="brand">${logoDataUrl ? `<img class="logo" src="${logoDataUrl}" alt="Municipality of Mutia logo">` : ""}<div class="shield">🔐</div></div><div class="kicker">Private CBMS Report</div><h1>Protected Report Compendium</h1><p>This HTML book is encrypted with AES-256. Enter the password from the system's Export Log. Three wrong passwords will lock this file for 5 hours.</p><div class="row"><input id="password" type="password" autocomplete="current-password" placeholder="Enter password"><button id="unlock">Unlock</button></div><div id="msg" class="msg"></div><div class="small">File security is enforced with PBKDF2 + AES-256-GCM. The password is never stored in this file.</div></main><script>
+</style></head><body><main class="card"><div class="brand">${logoDataUrl ? `<img class="logo" src="${logoDataUrl}" alt="CBMS Insights logo">` : ""}<div class="shield">🔐</div></div><div class="kicker">Private CBMS Export</div><h1>Protected Report Compendium</h1><p>This HTML book is encrypted with AES-256. Enter the password from the system's Export Log. Three wrong passwords will lock this file for 5 hours.</p><div class="row"><input id="password" type="password" autocomplete="current-password" placeholder="Enter password"><button id="unlock">Unlock</button></div><div id="msg" class="msg"></div><div class="small">File security is enforced with PBKDF2 + AES-256-GCM. The password is never stored in this file.</div></main><script>
 const PAYLOAD={salt:${JSON.stringify(bytesToBase64(salt))},iv:${JSON.stringify(bytesToBase64(iv))},data:${JSON.stringify(bytesToBase64(new Uint8Array(cipher)))},key:${JSON.stringify(fileToken)}};
-const LOCK_MS=5*60*60*1000; const STORE_KEY='mutialytics.cbms.html.lock.'+PAYLOAD.key; const $=id=>document.getElementById(id); const input=$('password'),msg=$('msg'),btn=$('unlock');
+const LOCK_MS=5*60*60*1000; const STORE_KEY='cbms-insights.cbms.html.lock.'+PAYLOAD.key; const $=id=>document.getElementById(id); const input=$('password'),msg=$('msg'),btn=$('unlock');
 function storage(){try{return window.localStorage}catch{return null}} function readState(){try{const raw=storage()?.getItem(STORE_KEY);return raw?JSON.parse(raw):{attempts:0,lockedUntil:0}}catch{return{attempts:0,lockedUntil:0}}} function writeState(s){try{storage()?.setItem(STORE_KEY,JSON.stringify(s))}catch{}}
 function fmt(ms){const s=Math.max(0,Math.ceil(ms/1000));const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return h+'h '+m+'m '+String(sec).padStart(2,'0')+'s'}
 let tick=null; function renderLock(){const s=readState(); if(s.lockedUntil && Date.now()<s.lockedUntil){btn.disabled=true;input.disabled=true;msg.textContent='Too many incorrect attempts. Try again in '+fmt(s.lockedUntil-Date.now())+'.';clearInterval(tick);tick=setInterval(()=>{const x=readState();if(!x.lockedUntil||Date.now()>=x.lockedUntil){writeState({attempts:0,lockedUntil:0});clearInterval(tick);btn.disabled=false;input.disabled=false;msg.textContent='You may enter the password again.'}else msg.textContent='Too many incorrect attempts. Try again in '+fmt(x.lockedUntil-Date.now())+'.'},1000)}else{btn.disabled=false;input.disabled=false}}
@@ -1567,23 +1560,16 @@ async function makeDocxBlob(book: ReportBook): Promise<Blob> {
   let bookmarkId = entries.length + 10;
   const body: string[] = [];
   const logoData = dataUrlParts(logoUrl);
-  const hallData = dataUrlParts(hallUrl);
 
   // Cover
   let nextRelId = 2;
   const logoRelId = logoData ? `rId${nextRelId++}` : null;
-  const hallRelId = hallData ? `rId${nextRelId++}` : null;
   if (logoRelId) body.push(docxImageParagraph(logoRelId, 1700000, 1700000, 1));
-  body.push(docxParagraph(docxRun("REPUBLIC OF THE PHILIPPINES", false, 24), {align:"center", after:90}));
-  body.push(docxParagraph(docxRun("PROVINCE OF ZAMBOANGA DEL NORTE", false, 23), {align:"center", after:60}));
-  body.push(docxParagraph(docxRun("MUNICIPALITY OF MUTIA", true, 30), {align:"center", after:180}));
-  if (hallRelId) body.push(docxImageParagraph(hallRelId, 7600000, 3900000, 2));
-  body.push(docxParagraph(docxRun(`CBMS ${book.year}`, true, 40), {align:"center", after:100}));
-  body.push(docxParagraph(docxRun("MUNICIPALITY OF MUTIA", true, 32), {align:"center", after:160}));
-  body.push(docxParagraph(docxRun("Community-Based Monitoring System - Consolidated Statistical Report", true, 22), {align:"center", after:90}));
+  body.push(docxParagraph(docxRun("COMMUNITY-BASED MONITORING SYSTEM", false, 24), {align:"center", after:90}));
+  body.push(docxParagraph(docxRun("CBMS INSIGHTS", true, 34), {align:"center", after:120}));
+  body.push(docxParagraph(docxRun("Consolidated Statistical Report", true, 22), {align:"center", after:90}));
   body.push(docxParagraph(docxRun(`Data year: CBMS ${book.year}`, false, 20), {align:"center", after:40}));
-  body.push(docxParagraph(docxRun(`Coverage: ${book.scope}`, false, 20), {align:"center", after:180}));
-  body.push(docxParagraph(docxRun("SOURCE: MUNICIPAL PLANNING AND DEVELOPMENT OFFICE", true, 22), {align:"center", after:60}));
+  body.push(docxParagraph(docxRun(`Coverage: ${book.scope}`, false, 20), {align:"center", after:80}));
   body.push(docxParagraph(docxRun(`Generated: ${book.generatedAt}`, false, 17), {align:"center"}));
   body.push(docxParagraph("", {pageBreak:true}));
 
@@ -1621,15 +1607,14 @@ async function makeDocxBlob(book: ReportBook): Promise<Blob> {
   const documentXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>${body.join("")}<w:sectPr><w:pgSz w:w="12240" w:h="18720"/><w:pgMar w:top="720" w:right="900" w:bottom="720" w:left="900"/><w:cols w:num="1"/></w:sectPr></w:body></w:document>`;
   const rootRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>`;
   const imageRels = [
-    logoRelId ? `<Relationship Id="${logoRelId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/mutia-logo.png"/>` : "",
-    hallRelId ? `<Relationship Id="${hallRelId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/mutia-hall.jpg"/>` : "",
+    logoRelId ? `<Relationship Id="${logoRelId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/cbms-insights-logo.png"/>` : "",
   ].join("");
   const docRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${imageRels}</Relationships>`;
   const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Default Extension="jpg" ContentType="image/jpeg"/><Default Extension="jpeg" ContentType="image/jpeg"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`;
   const stylesXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos" w:cs="Aptos"/><w:sz w:val="18"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="80"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style></w:styles>`;
   const settingsXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:zoom w:percent="100"/><w:defaultTabStop w:val="720"/><w:compat/><w:themeFontLang w:val="en-US"/></w:settings>`;
-  const coreXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>CBMS ${xmlEscape(book.year)} Municipality of Mutia - Report Compendium</dc:title><dc:creator>Municipality of Mutia</dc:creator></cp:coreProperties>`;
-  const appXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Mutia Insight</Application></Properties>`;
+  const coreXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>CBMS ${xmlEscape(book.year)} Selected Local Area - Report Compendium</dc:title><dc:creator>Selected Local Area</dc:creator></cp:coreProperties>`;
+  const appXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>CBMS Insights</Application></Properties>`;
   const zw = new ZipWriter(new BlobWriter("application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
   await zw.add("[Content_Types].xml", new TextReader(ct));
   await zw.add("_rels/.rels", new TextReader(rootRels));
@@ -1639,8 +1624,7 @@ async function makeDocxBlob(book: ReportBook): Promise<Blob> {
   await zw.add("word/settings.xml", new TextReader(settingsXml));
   await zw.add("word/document.xml", new TextReader(documentXml));
   await zw.add("word/_rels/document.xml.rels", new TextReader(docRels));
-  if (logoData) await zw.add("word/media/mutia-logo.png", new BlobReader(new Blob([logoData.bytes], {type:"image/png"})));
-  if (hallData) await zw.add("word/media/mutia-hall.jpg", new BlobReader(new Blob([hallData.bytes], {type:"image/jpeg"})));
+  if (logoData) await zw.add("word/media/cbms-insights-logo.png", new BlobReader(new Blob([logoData.bytes], {type:"image/png"})));
   return await zw.close();
 }
 

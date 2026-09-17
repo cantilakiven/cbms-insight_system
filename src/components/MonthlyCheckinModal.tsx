@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ShieldAlert } from "lucide-react";
-import logo from "@/assets/mutia-logo.png";
+import logo from "@/assets/cbms-insights-logo.png";
 
 const INSTALL_KEY = "localdata.installed-at";
 const ACK_KEY = "localdata.monthly-checkin.ack";
@@ -89,11 +89,11 @@ export default function MonthlyCheckinModal() {
     <div className="fixed inset-0 z-[101] flex items-center justify-center bg-background/85 p-4 backdrop-blur-sm">
       <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl">
         <div className="flex items-start gap-4">
-          <img src={logo} alt="Municipality of Mutia seal" className="h-14 w-14 shrink-0" />
+          <img src={logo} alt="CBMS Insights logo" className="h-14 w-14 shrink-0" />
           <div>
             <h2 className="font-display text-lg font-semibold">Maintenance reminder</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Local Data — Local Municipal Data Analytics System
+              Local Data — Community Data & Insights
             </p>
           </div>
         </div>

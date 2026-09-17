@@ -11,8 +11,7 @@ import {
 import appCss from "../styles.css?url";
 import MonthlyCheckinModal from "@/components/MonthlyCheckinModal";
 import { AppShell } from "@/components/AppShell";
-import logo from "@/assets/mutia-logo.png";
-import hallImage from "@/assets/mutia-municipal-hall.jpg";
+import logo from "@/assets/cbms-insights-logo.png";
 import { LockKeyhole, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -78,10 +77,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Local Municipal Data Analytics System" },
+      { title: "Community Data & Insights" },
       { name: "description", content: "CBMS-based community profiling, search and reports for LGUs and barangays." },
       { name: "author", content: "LMDAS" },
-      { property: "og:title", content: "Local Municipal Data Analytics System" },
+      { property: "og:title", content: "Community Data & Insights" },
       { property: "og:description", content: "CBMS-based community profiling for Philippine LGUs." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -157,7 +156,7 @@ function SecureLoginGate({ children }: { children: React.ReactNode }) {
   if (storageError) return (
     <div className="min-h-screen grid place-items-center bg-slate-950 p-6 text-white">
       <main className="w-full max-w-lg rounded-[28px] border border-red-400/20 bg-slate-900 p-7 shadow-2xl">
-        <div className="flex items-center gap-4"><img src={logo} alt="Municipality of Mutia" className="h-16 w-16 rounded-2xl bg-white p-2" /><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-red-300">Security storage error</div><h1 className="mt-1 text-2xl font-black">Access blocked</h1></div></div>
+        <div className="flex items-center gap-4"><img src={logo} alt="Selected Local Area" className="h-16 w-16 rounded-2xl bg-white p-2" /><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-red-300">Security storage error</div><h1 className="mt-1 text-2xl font-black">Access blocked</h1></div></div>
         <p className="mt-5 text-sm leading-6 text-slate-300">{storageError}</p>
         <p className="mt-3 text-xs leading-5 text-slate-400">Close the application completely and start it again. The application will not open its data until the existing security record can be verified.</p>
       </main>
@@ -206,14 +205,13 @@ function SecureLoginGate({ children }: { children: React.ReactNode }) {
   };
 
   return <div className="relative min-h-screen overflow-hidden bg-slate-950 p-6 grid place-items-center">
-    <img src={hallImage} alt="Mutia Municipal Hall" className="absolute inset-0 h-full w-full object-cover" />
     <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(2,12,27,.92),rgba(9,37,68,.78)_45%,rgba(2,12,27,.92))]" />
-    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(56,189,248,.14),transparent_45%)]" />
+    <div className="pointer-events-none absolute inset-0 opacity-20 [background-image:linear-gradient(rgba(255,255,255,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.05)_1px,transparent_1px)] [background-size:36px_36px]" />
     <main className="relative w-full max-w-md overflow-hidden rounded-[30px] border border-white/25 bg-slate-950/70 p-7 shadow-[0_30px_100px_rgba(0,0,0,.45)] backdrop-blur-xl">
       <div className="pointer-events-none absolute inset-0 rounded-[30px] ring-1 ring-inset ring-white/10" />
       <div className="relative flex items-center gap-4">
-        <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-white/20 bg-white/95 p-2 shadow-xl"><img src={logo} alt="Municipality of Mutia" className="h-full w-full rounded-xl object-contain" /></div>
-        <div><div className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-300">Protected access</div><h1 className="mt-1 font-display text-2xl font-black text-white">MutiaLytics</h1><p className="text-xs text-slate-300">Municipal CBMS Analytics System</p></div>
+        <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-white/20 bg-white/95 p-2 shadow-xl"><img src={logo} alt="Selected Local Area" className="h-full w-full rounded-xl object-contain" /></div>
+        <div><div className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-300">Protected access</div><h1 className="mt-1 font-display text-2xl font-black text-white">CBMS Insights</h1><p className="text-xs text-slate-300">Community-Based Monitoring System</p></div>
       </div>
       <div className="relative mt-7 overflow-hidden rounded-2xl border border-white/15 bg-white/8 p-4">
         <div className="absolute -right-6 -top-8 h-20 w-20 rounded-full bg-cyan-400/10 blur-2xl" />
@@ -260,7 +258,7 @@ function SecureLoginGate({ children }: { children: React.ReactNode }) {
           <p className="mt-1 text-xs text-red-200/80">Three consecutive incorrect PIN entries trigger this 10-hour lockout.</p>
         </div>
       ) : (error || attemptsRemaining < 3) && <p className="relative mt-3 text-center text-sm font-semibold text-red-300">{error || `${attemptsRemaining} attempt${attemptsRemaining === 1 ? "" : "s"} remaining.`}</p>}
-      <div className="relative mt-5 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.7)]" /> Local secure session <span className="mx-1 text-slate-600">•</span> Municipality of Mutia</div>
+      <div className="relative mt-5 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.7)]" /> Local secure session <span className="mx-1 text-slate-600">•</span> Selected Local Area</div>
     </main>
   </div>;
 }

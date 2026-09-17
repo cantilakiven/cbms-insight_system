@@ -30,9 +30,9 @@ import {
   Loader2,
 } from "lucide-react";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { municipality } from "@/data/cbms";
+import { coverageLabel } from "@/data/cbms";
 import { DataGate } from "./DataGate";
-import logo from "@/assets/mutia-logo.png";
+import logo from "@/assets/cbms-insights-logo.png";
 import { ThemeToggle } from "./ThemeToggle";
 import { ExportPasswordModal, PrintPreviewModal } from "./ExportTools";
 import {
@@ -121,7 +121,7 @@ export function AppShell() {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    try { return localStorage.getItem("mutialytics.sidebar.collapsed") === "1"; } catch { return false; }
+    try { return localStorage.getItem("cbms-insights.sidebar.collapsed") === "1"; } catch { return false; }
   });
   const [searchValue, setSearchValue] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -133,7 +133,7 @@ export function AppShell() {
   const availableYears = getAvailableYears();
   const availableBarangays = getAvailableBarangays(activeYear);
 
-  const pageTitle = PAGE_TITLES[loc.pathname] ?? "Municipal Information System";
+  const pageTitle = PAGE_TITLES[loc.pathname] ?? "Community Data & Insights";
   const suggestions = useMemo(() => {
     const q = searchValue.trim().toLowerCase();
     if (!q) return ALL_NAV_ITEMS.slice(0, 6);
@@ -147,7 +147,7 @@ export function AppShell() {
   }, [loc.pathname]);
 
   useEffect(() => {
-    try { localStorage.setItem("mutialytics.sidebar.collapsed", sidebarCollapsed ? "1" : "0"); } catch {}
+    try { localStorage.setItem("cbms-insights.sidebar.collapsed", sidebarCollapsed ? "1" : "0"); } catch {}
   }, [sidebarCollapsed]);
 
   useEffect(() => {
@@ -240,7 +240,7 @@ export function AppShell() {
             </button>
 
             <div className="app-breadcrumbs">
-              <span className="app-breadcrumb-muted">Mutia</span>
+              <span className="app-breadcrumb-muted">CBMS Insights</span>
               <span className="app-breadcrumb-slash">/</span>
               <span className="app-breadcrumb-current">{pageTitle}</span>
             </div>
@@ -375,7 +375,7 @@ export function AppShell() {
         <div className="sticky top-[57px] z-20 flex items-center justify-between gap-3 border-b border-primary/20 bg-primary/8 px-4 py-2 text-xs">
           <div className="flex min-w-0 items-center gap-2 text-primary">
             <DownloadCloud className="h-4 w-4 shrink-0" />
-            <span className="truncate font-semibold">A new MutiaLytics update {updateState.version ? `(${updateState.version})` : ""} is available and is downloading in the background.</span>
+            <span className="truncate font-semibold">A new CBMS Insights update {updateState.version ? `(${updateState.version})` : ""} is available and is downloading in the background.</span>
           </div>
           <button type="button" onClick={checkForUpdates} className="shrink-0 rounded-md border border-primary/20 bg-background px-2.5 py-1.5 font-semibold text-primary hover:bg-primary/5">Check now</button>
         </div>
@@ -396,7 +396,7 @@ export function AppShell() {
             {loc.pathname !== "/comparative" && (
               <div className="app-main-footer">
                 <span>{getSourceWatermark(activeYear)}</span>
-                <span>Municipal Community-Based Monitoring System · Offline-ready</span>
+                <span>CBMS · Offline-ready</span>
               </div>
             )}
           </DataGate>
@@ -409,10 +409,10 @@ export function AppShell() {
 function SidebarBrand({ mobile = false, collapsed = false, onToggle }: { mobile?: boolean; collapsed?: boolean; onToggle?: () => void }) {
   return (
     <div className={`app-brand ${mobile ? "is-mobile" : ""} ${collapsed ? "is-collapsed" : ""}`}>
-      <img alt="Bayan ng Mutia seal" className="app-brand-seal" src={logo} />
+      <img alt="CBMS Insights logo" className="app-brand-seal" src={logo} />
       {!collapsed && <div className="min-w-0">
-        <div className="app-brand-kicker">Municipal Government</div>
-        <div className="app-brand-title">Mutia</div>
+        <div className="app-brand-kicker">Community Data System</div>
+        <div className="app-brand-title">CBMS</div>
         <div className="app-brand-subtitle">Community-Based Monitoring System</div>
       </div>}
       {!mobile && onToggle && <button type="button" onClick={onToggle} className="app-sidebar-collapse-toggle" aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} title={collapsed ? "Expand sidebar" : "Collapse sidebar"}>{collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}</button>}
@@ -462,7 +462,7 @@ function SidebarAccount({ collapsed = false }: { collapsed?: boolean }) {
     <div className="app-sidebar-account">
       <div className="app-account-avatar">MO</div>
       {!collapsed && <div className="min-w-0 flex-1">
-        <div className="truncate text-[11px] font-bold">Municipal Office</div>
+        <div className="truncate text-[11px] font-bold">Data Office</div>
         <div className="truncate text-[9px] text-sidebar-foreground/45">Data &amp; Planning</div>
       </div>}
       <div className="app-account-status" title="Local app ready"><Activity className="h-3 w-3" /></div>

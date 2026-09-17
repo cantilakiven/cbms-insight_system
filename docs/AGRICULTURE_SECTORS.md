@@ -46,4 +46,4 @@ This is an **income-based project proxy**, not an official PSA poverty-incidence
 
 ## Agriculture classification
 
-Agricultural employment uses employment status plus farmer, occupation, and industry indicators. The report distinguishes the agricultural rate denominator from the overall municipal population denominator.
+Agricultural employment uses employment status plus farmer, occupation, and industry indicators. The report distinguishes the agricultural rate denominator from the overall dataset population denominator.

@@ -17,9 +17,9 @@ PRIVATE SOURCE REPOSITORY
                        │
                        ▼
 PUBLIC RELEASE-ONLY REPOSITORY
-        ├── Mutia-Insight-Setup-X.Y.Z.exe
+        ├── CBMS-Insights-Setup-X.Y.Z.exe
         ├── latest.yml
-        └── Mutia-Insight-Setup-X.Y.Z.exe.blockmap
+        └── CBMS-Insights-Setup-X.Y.Z.exe.blockmap
 ```
 
 The current project configuration intentionally remains compatible with the existing repository. Migrating the public updater feed to a separate release-only repository requires creating that repository first and changing the owner/repo configuration in `package.json` plus the release workflow.

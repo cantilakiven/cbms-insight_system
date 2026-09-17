@@ -1,6 +1,6 @@
 # Printing behavior
 
-MutiaLytics uses one shared Electron printing path from the system-wide Print Preview modal.
+CBMS Insights uses one shared Electron printing path from the system-wide Print Preview modal.
 
 ## Paper sizes
 

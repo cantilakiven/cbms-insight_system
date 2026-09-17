@@ -4,7 +4,7 @@ export const FIELD_LABELS: Record<string, string> = {
   area_name: "Barangay",
   region_code: "Region",
   province_code: "Province",
-  city_mun_code: "City/Municipality",
+  city_mun_code: "City/Local Area",
   barangay_code: "Barangay Code",
   husn: "Household Serial No.",
   hsn: "Housing Serial No.",

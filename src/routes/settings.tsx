@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { KeyRound, ShieldCheck, LockKeyhole, CheckCircle2, RefreshCw, DownloadCloud } from "lucide-react";
-import logo from "@/assets/mutia-logo.png";
+import logo from "@/assets/cbms-insights-logo.png";
 
 export const Route = createFileRoute("/settings")({ component: SettingsPage });
 
@@ -63,7 +63,7 @@ function SettingsPage() {
   return <div className="mx-auto max-w-3xl space-y-6">
     <section className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
       <div className="flex items-center gap-4">
-        <img src={logo} alt="Municipality of Mutia" className="h-14 w-14 rounded-2xl border border-border bg-background p-2" />
+        <img src={logo} alt="CBMS Insights" className="h-14 w-14 rounded-2xl border border-border bg-background p-2" />
         <div><div className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">System security</div><h1 className="mt-1 font-display text-2xl font-bold">Settings</h1><p className="text-sm text-muted-foreground">Protect access to this CBMS desktop system with a private 6-digit PIN.</p></div>
       </div>
     </section>
@@ -82,7 +82,7 @@ function SettingsPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">Update center</div>
-          <h2 className="mt-1 font-display text-lg font-bold">MutiaLytics {appVersion !== "—" ? `v${appVersion}` : ""}</h2>
+          <h2 className="mt-1 font-display text-lg font-bold">CBMS Insights {appVersion !== "—" ? `v${appVersion}` : ""}</h2>
           <p className="mt-1 text-sm text-muted-foreground">Use the packaged desktop application to check GitHub for a newer release. Development mode does not install updates.</p>
         </div>
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><DownloadCloud className="h-5 w-5" /></div>
@@ -92,6 +92,15 @@ function SettingsPage() {
         {checkingUpdate ? "Checking…" : "Check for updates"}
       </button>
       {updateMessage && <div className="mt-3 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-muted-foreground">{updateMessage}</div>}
+    </section>
+    <section className="rounded-2xl border border-border bg-muted/30 p-5 text-sm text-muted-foreground">
+      <div className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">Credits</div>
+      <div className="mt-2 font-semibold text-foreground">Developed by Kiven Cantila</div>
+      <a className="mt-1 inline-flex text-primary hover:underline" href="https://www.facebook.com/hello.kwekwe" target="_blank" rel="noreferrer">facebook.com/hello.kwekwe</a>
+      <div className="mt-3 grid gap-1.5 text-xs">
+        <div><span className="font-semibold text-foreground">UI/UX Designer:</span> Clifford Kevin Bohol</div>
+        <div><span className="font-semibold text-foreground">Tester:</span> Fredrich Cabasag</div>
+      </div>
     </section>
   </div>;
 }

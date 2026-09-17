@@ -1,4 +1,4 @@
-name: Build and Release MutiaLytics Desktop
+name: Build and Release CBMS Insights Desktop
 
 on:
   push:
@@ -13,7 +13,7 @@ env:
   RELEASE_DIR: release
 
 concurrency:
-  group: mutialytics-release-${{ github.ref_name }}
+  group: cbms-insights-release-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -27,7 +27,9 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: npm
+          # This repository intentionally does not commit a package-lock.json.
+          # Disable setup-node dependency caching so the workflow does not require a lockfile.
+          package-manager-cache: false
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
@@ -92,7 +94,7 @@ jobs:
           if ($LASTEXITCODE -eq 0) {
             Write-Host "Release $tag already exists; uploading/replacing only the three expected Windows updater assets."
           } else {
-            gh release create $tag --repo $env:GITHUB_REPOSITORY --title "MutiaLytics $tag" --generate-notes --latest
+            gh release create $tag --repo $env:GITHUB_REPOSITORY --title "CBMS Insights $tag" --generate-notes --latest
             if ($LASTEXITCODE -ne 0) { throw "Unable to create GitHub Release $tag" }
           }
 
@@ -128,7 +130,7 @@ jobs:
       - name: Upload build artifacts to Actions for troubleshooting
         uses: actions/upload-artifact@v6
         with:
-          name: MutiaLytics-Windows-${{ github.ref_name }}
+          name: CBMS-Insights-Windows-${{ github.ref_name }}
           path: |
             release/*.exe
             release/latest.yml
