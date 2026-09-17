@@ -128,7 +128,7 @@ jobs:
           Write-Host 'GitHub Release verification passed.'
 
       - name: Upload build artifacts to Actions for troubleshooting
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: CBMS-Insights-Windows-${{ github.ref_name }}
           path: |
