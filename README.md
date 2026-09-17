@@ -163,8 +163,8 @@ The Windows installer contains the packaged Electron application code inside `ap
 
 
 git add .
-git commit -m "Release v1.2.4"
+git commit -m "Release v1.2.5"
 git push origin main
 
-git tag v1.2.4
-git push origin v1.2.4
+git tag v1.2.5
+git push origin v1.2.5
