@@ -1,36 +1,36 @@
-# MutiaLytics Release Checklist
+# Windows Release Checklist
 
-## Before tagging
+## Required versioning
 
-- [ ] `package.json` version is the intended next version.
-- [ ] No release tag uses a lower version than the installed production build.
-- [ ] `npm run build` works locally.
-- [ ] `npm run electron:dev` works for a smoke test.
+Keep these exactly aligned:
 
-## Tagging
+- `package.json` version: `1.2.4`
+- Git tag: `v1.2.4`
+
+The release workflow fails if they differ.
+
+## Expected Windows artifacts
+
+A successful release must contain:
+
+- `Mutia-Insight-Setup-X.Y.Z.exe`
+- `latest.yml`
+- `Mutia-Insight-Setup-X.Y.Z.exe.blockmap`
+
+The `.exe` is the desktop installer. The `.blockmap` is not an installer; it supports update delivery.
+
+## Update metadata
+
+electron-builder generates modern `latest.yml` metadata. Newer electron-builder releases may put the installer URL under `files[].url` instead of the legacy top-level `path`. The repository validation script accepts both formats and URL-encoded filenames.
+
+## Publishing
 
 ```powershell
 git add .
-git commit -m "Release v1.2.2"
+git commit -m "Release v1.2.4"
 git push origin main
-git tag v1.2.2
-git push origin v1.2.2
+git tag v1.2.4
+git push origin v1.2.4
 ```
 
-## GitHub Release assets
-
-The workflow must publish all three updater assets:
-
-- [ ] `Mutia-Insight-Setup-X.Y.Z.exe`
-- [ ] `latest.yml`
-- [ ] `Mutia-Insight-Setup-X.Y.Z.exe.blockmap`
-
-GitHub may also show the automatic Source code ZIP/TAR.GZ assets. Those are not the desktop installer.
-
-## Post-release test
-
-- [ ] Install the released `.exe` on a clean Windows machine.
-- [ ] Confirm the app opens normally.
-- [ ] Publish the next patch version.
-- [ ] Confirm the installed app detects the newer version.
-- [ ] Confirm the update download/install completes.
+GitHub Actions then builds the NSIS installer, validates the updater metadata, uploads the three Windows updater assets, and verifies the final GitHub Release.

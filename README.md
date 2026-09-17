@@ -1,11 +1,3 @@
-git add .
-git commit -m "Release v1.2.4"
-git push origin main
-
-git tag v1.2.4
-git push origin v1.2.4
-
-
 # MutiaLytics — Local Municipal Data Analytics System
 
 Offline CBMS analytics for the Municipality of Mutia, Zamboanga del Norte. The desktop application runs locally with Electron and supports the CBMS 2022 and CBMS 2024 datasets.
@@ -168,3 +160,11 @@ See `docs/AUTO_UPDATE_GITHUB.md` for the full release checklist and troubleshoot
 ## Source-code security
 
 The Windows installer contains the packaged Electron application code inside `app.asar`; JavaScript/TypeScript source included in a desktop Electron application is not cryptographically hidden by packaging. For confidentiality, keep the source repository private and use a separate public release repository containing only installers and updater metadata. See `docs/GITHUB_SECURITY.md`.
+
+
+git add .
+git commit -m "Release v1.2.4"
+git push origin main
+
+git tag v1.2.4
+git push origin v1.2.4

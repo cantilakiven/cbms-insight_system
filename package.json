@@ -53,7 +53,9 @@
             "x64"
           ]
         }
-      ]
+      ],
+      "artifactName": "Mutia-Insight-Setup-${version}.${ext}",
+      "electronUpdaterCompatibility": ">=2.16"
     },
     "linux": {
       "icon": "src/assets/android-chrome-512x512.png",
@@ -66,7 +68,8 @@
       "owner": "cantilakiven",
       "repo": "cbms-mutia_system",
       "releaseType": "release"
-    }
+    },
+    "artifactName": "Mutia-Insight-Setup-${version}.${ext}"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",
