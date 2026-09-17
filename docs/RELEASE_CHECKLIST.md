@@ -1,36 +1,39 @@
 # Windows Release Checklist
 
-## Required versioning
+## Before commit
 
-Keep these exactly aligned:
+```powershell
+npm install
+npm run lint
+npm run validate:project
+npm run build
+```
 
-- `package.json` version: `1.2.4`
-- Git tag: `v1.2.4`
+## Version
 
-The release workflow fails if they differ.
+Update `package.json` first. Example:
 
-## Expected Windows artifacts
+```text
+package.json = 1.2.6
+tag = v1.2.6
+```
 
-A successful release must contain:
-
-- `Mutia-Insight-Setup-X.Y.Z.exe`
-- `latest.yml`
-- `Mutia-Insight-Setup-X.Y.Z.exe.blockmap`
-
-The `.exe` is the desktop installer. The `.blockmap` is not an installer; it supports update delivery.
-
-## Update metadata
-
-electron-builder generates modern `latest.yml` metadata. Newer electron-builder releases may put the installer URL under `files[].url` instead of the legacy top-level `path`. The repository validation script accepts both formats and URL-encoded filenames.
-
-## Publishing
+## Release
 
 ```powershell
 git add .
-git commit -m "Release v1.2.4"
+git commit -m "Release v1.2.6"
 git push origin main
-git tag v1.2.4
-git push origin v1.2.4
+git tag v1.2.6
+git push origin v1.2.6
 ```
 
-GitHub Actions then builds the NSIS installer, validates the updater metadata, uploads the three Windows updater assets, and verifies the final GitHub Release.
+## Expected GitHub assets
+
+- `Mutia-Insight-Setup-1.2.6.exe`
+- `latest.yml`
+- `Mutia-Insight-Setup-1.2.6.exe.blockmap`
+
+## Auto-update test
+
+Install the previous version, publish the new version, run the previous installed application while online, click **Check updates**, download, restart, and verify the new version.

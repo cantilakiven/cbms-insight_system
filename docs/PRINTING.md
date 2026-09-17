@@ -12,21 +12,17 @@ MutiaLytics uses one shared Electron printing path from the system-wide Print Pr
 
 ## Orientation
 
-The preview reflects the selected portrait or landscape orientation. For the physical printer job, the application intentionally opens the native Windows print dialog instead of using a silent background print call.
+The application preview reflects the selected portrait or landscape orientation. The physical printer handoff uses the selected paper dimensions and the Windows printer dialog so the manufacturer driver can apply the final media/orientation settings.
 
-This is deliberate: some Windows printer drivers ignore or reinterpret Chromium's silent-print orientation settings. The native Windows print dialog lets the installed printer driver negotiate the final media/orientation settings while the application still supplies the selected paper size and landscape/portrait preference.
+## Zoom
 
-The application therefore keeps the following sequence:
+Fit view shows the whole page. At higher zoom, the preview is a two-dimensional scroll surface so the user can reach the top, bottom, left, and right edges of portrait and landscape pages.
 
-`Print Preview → select paper/orientation/printer → Print document → Windows printer dialog → Print`
+## Troubleshooting
 
-## Troubleshooting a driver that ignores landscape
+If a printer still outputs portrait when landscape was selected:
 
-If a printer still shows portrait inside the Windows print dialog after selecting landscape in MutiaLytics:
-
-1. Confirm the printer's Windows driver is installed and current.
-2. Confirm the selected paper size is supported by that printer.
-3. In the Windows print dialog, set **Landscape** before clicking the final Print button.
-4. Prefer the printer's manufacturer driver over a generic Windows driver when both are available.
-
-The custom app preview does not replace the printer manufacturer's driver settings.
+1. Confirm the selected paper size is supported by the printer.
+2. Confirm **Landscape** is selected in the final Windows printer dialog.
+3. Prefer the printer manufacturer's Windows driver over a generic driver where applicable.
+4. Test the same paper size from another Windows application to distinguish driver behavior from application behavior.

@@ -1,0 +1,62 @@
+MUTIALYTICS — END USER LICENSE AGREEMENT (EULA)
+Version 1.0
+
+IMPORTANT: Please read this agreement carefully before installing or using the software.
+
+1. ACCEPTANCE
+By installing, copying, or using MutiaLytics (the “Software”), you acknowledge that you have read and accepted this EULA. If you do not agree, do not install or use the Software.
+
+2. SOFTWARE SCOPE
+MutiaLytics is an independent municipal data processing, management, analytics, reporting, export, and printing utility intended for authorized Local Government Unit (LGU) personnel, particularly Municipal Planning and Development Office (MPDO) workflows. The current desktop application reads CBMS JSON data supplied by the authorized operator. It does not bundle municipal CBMS raw datasets and does not contain or distribute PSA RSA decryption keys.
+
+3. LICENSE AND INTELLECTUAL PROPERTY
+The Software is licensed, not sold. The developer grants the LGU a non-exclusive, non-transferable license to use the Software for authorized municipal planning, analysis, reporting, and related administrative purposes. Unless separately agreed in writing, the developer retains intellectual-property rights in the Software source code, application architecture, and user interface. The LGU retains responsibility for the datasets it lawfully provides to the Software and for how those datasets are used, exported, stored, and shared.
+
+4. DATA SOURCE, AUTHORIZATION, AND PSA NON-AFFILIATION
+MutiaLytics is an independent software project and is not an official PSA product, does not claim PSA endorsement, and is not affiliated with the Philippine Statistics Authority (PSA). The Software does not bypass PSA access controls and does not ship PSA RSA keys. Any upstream extraction or decryption of PSA-delivered RData files must be performed through an authorized PSA/LGU workflow using credentials and keys issued or authorized for that purpose. Operators must not use this Software to access data they are not authorized to access.
+
+5. DATA PRIVACY AND GOVERNMENT DATA RESPONSIBILITY
+CBMS datasets may contain personal information and sensitive personal information. The responsible LGU/entity must determine and comply with its obligations under applicable Philippine privacy and records-management requirements, including Republic Act No. 10173 (Data Privacy Act of 2012), its implementing rules, and Republic Act No. 11315 (Community-Based Monitoring System Act). MutiaLytics does not replace the LGU’s privacy, security, records-retention, access-control, or disclosure policies.
+
+6. EXPORT SECURITY — AES-256 PROTECTION
+The Software’s file-export functions are designed to protect exported data using password-protected AES-256 encrypted containers. CSV, XLSX, PDF, and DOCX exports are wrapped in password-protected AES-256 ZIP archives. Protected HTML report exports use AES-256-GCM encryption with a derived key. The Software generates export passwords and records export details locally for authorized retrieval. The export password must be kept separate from the exported file.
+
+The AES-256 protection applies to the Software’s protected file-export workflows. It does not mean that a physical printout, a screen display, or an unprotected copy intentionally created outside the Software is encrypted. The LGU remains responsible for secure handling of exported files and passwords.
+
+7. LOCAL DATA STORAGE
+Imported CBMS data is processed locally on the authorized workstation. The application may cache normalized runtime data in the workstation’s local application storage so that imported datasets remain available after a restart. This local cache is not presented as a substitute for full-disk encryption or Windows account security. Use appropriate OS-level security, access controls, and disk encryption where required.
+
+8. SECURITY CONTROLS
+When configured, the Software protects startup access with a six-digit PIN. Three consecutive incorrect attempts cause a persistent ten-hour lockout. PIN verification and lockout enforcement run in the Electron main process. The stored PIN verifier uses a memory-hard scrypt derivation, while the authentication record is protected with authenticated AES-256-GCM and an OS-protected application key where available.
+
+9. USER RESPONSIBILITIES
+Authorized users are responsible for:
+(a) using only lawfully obtained and authorized CBMS data;
+(b) protecting PSA or LGU credentials and any authorized decryption keys;
+(c) preventing unauthorized access to the workstation and exported files;
+(d) keeping export passwords separate from exported archives;
+(e) validating reports before official use; and
+(f) complying with applicable PSA, NPC, LGU, records-management, and other government policies.
+
+10. DISCLAIMER OF WARRANTY
+THE SOFTWARE IS PROVIDED “AS IS” TO THE MAXIMUM EXTENT PERMITTED BY LAW. NO WARRANTY IS MADE THAT THE SOFTWARE WILL BE ERROR-FREE, UNINTERRUPTED, OR SUITABLE FOR EVERY PURPOSE. DATA AND CALCULATION RESULTS SHOULD BE REVIEWED BY AUTHORIZED MUNICIPAL PERSONNEL BEFORE BEING USED FOR OFFICIAL DECISIONS OR SUBMISSIONS.
+
+11. LIMITATION OF LIABILITY
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE DEVELOPER SHALL NOT BE LIABLE FOR INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR LOSS-OF-DATA DAMAGES ARISING FROM USE, MISUSE, UNAUTHORIZED ACCESS, IMPROPER DATA HANDLING, OR FAILURE TO FOLLOW REQUIRED GOVERNMENT SECURITY CONTROLS.
+
+12. TERMINATION
+This license terminates if the user materially violates its terms. Upon termination, the user must stop using the Software and handle any retained datasets and exports in accordance with applicable law and LGU policy.
+
+13. GOVERNING LAW
+This agreement is intended to be interpreted under applicable laws of the Republic of the Philippines.
+
+14. INSTALLER LICENSE DISPLAY
+The Windows NSIS installer is configured to display this EULA as the installer’s license agreement. The application does not use a second in-app EULA screen.
+
+15. CREDITS
+Developer: Kiven Cantila
+UI/UX Designer: Clifford Kevin Bohol
+Tester: Fredrich Cabasag
+Institutional context / intended office: Municipal Planning and Development Office, Municipality of Mutia, Zamboanga del Norte
+
+This EULA is informational software licensing text and is not a substitute for advice from qualified Philippine legal counsel, the LGU Data Protection Officer, the National Privacy Commission, PSA, or other competent government authority.

@@ -1,33 +1,75 @@
-# GitHub and Update Security
+# GitHub, Source, Release, and Update Security
 
-## Important
-If the GitHub repository containing this source code is public, the source code is public. The Windows `.exe` release does not hide the source that is present in a public repository.
+## The most important fact
 
-For a municipal deployment, the recommended free architecture is:
+A public GitHub repository is a public source repository. An Electron `.exe` does not hide TypeScript/JavaScript source that is already public, and Electron packages normally contain an `app.asar` archive that can be inspected by someone who has the installed application.
 
-1. Make the application/source repository **private**.
-2. Create a separate public repository named something like `cbms-mutia-releases` that contains only release binaries and updater metadata.
-3. Store a fine-grained GitHub token as a secret in the private source repository (for example `RELEASES_TOKEN`) with access only to the release repository's contents.
-4. Publish only `*.exe`, `latest.yml`, and `*.blockmap` to the public release repository.
-5. Configure `electron-updater` to read updates from that public release repository.
+The `"private": true` field in `package.json` is an npm publication control; it does **not** make a GitHub repository private. Repository visibility must be controlled in GitHub.
 
-Do **not** put a GitHub token inside the desktop application. A public updater feed must not require a secret on the client.
+### Recommended production architecture
+
+For source confidentiality, use two repositories:
+
+```text
+PRIVATE SOURCE REPOSITORY
+        │
+        └── GitHub Actions release workflow
+                       │
+                       ▼
+PUBLIC RELEASE-ONLY REPOSITORY
+        ├── Mutia-Insight-Setup-X.Y.Z.exe
+        ├── latest.yml
+        └── Mutia-Insight-Setup-X.Y.Z.exe.blockmap
+```
+
+The current project configuration intentionally remains compatible with the existing repository. Migrating the public updater feed to a separate release-only repository requires creating that repository first and changing the owner/repo configuration in `package.json` plus the release workflow.
+
+Do not put a GitHub write token in the desktop application.
 
 ## Repository hardening
-Enable branch protection for `main`, require pull requests for changes when appropriate, and keep Actions permissions at the minimum required. The release workflow should keep `permissions: contents: write` only because it must create/update releases. Never print secrets in workflow logs.
 
-Enable GitHub Dependabot alerts/updates and secret scanning for the private source repository. Do not commit `.pfx`, `.p12`, private keys, GitHub tokens, or `.env` files.
+Enable:
 
-## Windows code signing
-The current updater can verify update signatures **only after the Windows installer is Authenticode-signed**. Without a real code-signing certificate, the application does not have publisher-identity verification. See the electron-builder Windows signing documentation.
+- branch protection for `main`;
+- CodeQL code scanning;
+- Dependabot alerts/updates;
+- secret scanning where available;
+- least-privilege Actions permissions;
+- required review for release workflow changes.
 
-## Duplicate GitHub releases
-The previous workflow used `electron-builder --publish always` and then a second manual `gh release create/upload` phase. That creates two competing publishers and can race. It also had `workflow_dispatch`, which could run without a release tag.
+Do not commit:
 
-The current workflow fixes this by:
+- raw CBMS JSON;
+- `.RData`, `.Rda`, `.RDS`;
+- PSA RSA/private keys;
+- `.pfx`, `.p12`, `.pem`, `.key`;
+- GitHub tokens;
+- `.env` secrets;
+- Windows installer binaries;
+- `.blockmap` or `latest.yml` generated artifacts.
 
-- running only when a `v*` tag is pushed;
-- building with `--publish never`;
-- creating the GitHub Release exactly once;
-- uploading `.exe`, `latest.yml`, and `.blockmap` explicitly; and
-- verifying those three assets afterward.
+## Automated repository safety check
+
+Run:
+
+```powershell
+npm run validate:project
+```
+
+The same check runs in GitHub Actions before the release build and security workflow.
+
+## Automatic updater
+
+The packaged Windows build uses `electron-updater` and NSIS. A correct release contains the installer, `latest.yml`, and blockmap. The client must never need a secret token to download a public release.
+
+## Code signing
+
+The current updater architecture should be paired with an Authenticode code-signing certificate for production distribution. Without code signing, Windows cannot give users the same publisher-identity assurance as a signed installer.
+
+## Duplicate releases
+
+Only one workflow is allowed to publish the release. The current workflow builds with `electron-builder --publish never` and then explicitly creates/updates the GitHub Release. Do not reintroduce `--publish always` or a second publisher for the same tag.
+
+## Sensitive historical data
+
+Deleting a sensitive file from the current branch does not necessarily remove it from Git history. If raw CBMS data, a token, or a private key was committed previously, treat it as compromised and follow GitHub's sensitive-data removal process and rotate the credential/key.

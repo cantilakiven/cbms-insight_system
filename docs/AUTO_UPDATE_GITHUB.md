@@ -1,42 +1,69 @@
-# MutiaLytics GitHub Releases and Automatic Updates
+# GitHub Releases and Automatic Updates
 
-## How to verify updates actually work
+## Production release assets
 
-Automatic updates are available only in a **packaged Windows NSIS installer**, not `npm run electron:dev`. The application checks GitHub Releases shortly after startup and exposes **Check updates** in the top bar.
-
-Test with two real versions:
-
-1. Install the older release, for example `1.2.4`.
-2. Publish a newer release, for example `1.2.5`, with a matching tag `v1.2.5`.
-3. Start the installed `1.2.4` application while connected to the internet.
-4. Click **Check updates**.
-5. The app should show the newer version, download it, then show **Update ready**.
-6. Restart the app and confirm `app.getVersion()` is `1.2.5`.
-
-A release must contain all three Windows updater assets:
+Every Windows release must contain exactly these updater assets:
 
 - `Mutia-Insight-Setup-X.Y.Z.exe`
 - `latest.yml`
 - `Mutia-Insight-Setup-X.Y.Z.exe.blockmap`
 
-The `.blockmap` is not the installer. `latest.yml` is the updater manifest. electron-updater uses both together with the NSIS installer.
+The GitHub UI may also show its automatically generated source archives. Those source archives are a consequence of repository visibility; they are not uploaded by the release workflow.
 
-## Release flow
+## Versioning
 
-The workflow intentionally **does not let electron-builder publish**. It runs `electron-builder --publish never`, then creates/uploads a single GitHub Release. This prevents duplicate releases and publish races.
+Keep these identical:
 
-Use:
+```text
+package.json version = 1.2.6
+Git tag              = v1.2.6
+```
+
+## Release commands
 
 ```powershell
 git add .
-git commit -m "Release v1.2.5"
+git commit -m "Release v1.2.6"
 git push origin main
-git tag v1.2.5
-git push origin v1.2.5
+git tag v1.2.6
+git push origin v1.2.6
 ```
 
-`package.json` version must exactly equal `1.2.5`. The workflow rejects mismatches.
+## Workflow
 
-## Recommended source/release security
+The workflow:
 
-If source confidentiality matters, keep the **source repository private** and publish only the Windows release assets to a separate public `cbms-mutia-releases` repository. Do not put a GitHub token in the installed app. See `docs/GITHUB_SECURITY.md`.
+1. checks repository safety;
+2. checks package/tag version equality;
+3. builds the web application;
+4. builds NSIS with publishing disabled;
+5. validates `latest.yml` and the installer;
+6. creates one GitHub Release;
+7. uploads `.exe`, `latest.yml`, and `.blockmap`;
+8. verifies the published assets.
+
+This design avoids the duplicate-release race caused by having both electron-builder and `gh release create` publish independently.
+
+## Real auto-update test
+
+Use a packaged installation, not `npm run electron:dev`.
+
+Example:
+
+```text
+Installed version: 1.2.5
+New release:       1.2.6
+```
+
+1. Install 1.2.5.
+2. Publish 1.2.6.
+3. Start 1.2.5 while online.
+4. Click **Check updates**.
+5. Wait for **New update** / download progress.
+6. Confirm **Update ready**.
+7. Restart the application.
+8. Confirm the installed version is 1.2.6.
+
+## Public source versus public release
+
+If the source repository is public, GitHub will make the tag source archive visible. For source confidentiality, move the source repository to private and publish binaries from a separate public release-only repository. See `docs/GITHUB_SECURITY.md`.

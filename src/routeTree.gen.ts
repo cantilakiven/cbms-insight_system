@@ -22,7 +22,6 @@ import { Route as InspectorRouteImport } from './routes/inspector'
 import { Route as PersonsRouteImport } from './routes/persons'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SectorsRouteImport } from './routes/sectors'
-import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TroubleshootingRouteImport } from './routes/troubleshooting'
 import { Route as ValidationRouteImport } from './routes/validation'
 
@@ -91,11 +90,6 @@ const SectorsRoute = SectorsRouteImport.update({
   path: '/sectors',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const TroubleshootingRoute = TroubleshootingRouteImport.update({
   id: '/troubleshooting',
   path: '/troubleshooting',
@@ -121,7 +115,6 @@ export interface FileRoutesByFullPath {
   '/persons': typeof PersonsRoute
   '/reports': typeof ReportsRoute
   '/sectors': typeof SectorsRoute
-  '/settings': typeof SettingsRoute
   '/troubleshooting': typeof TroubleshootingRoute
   '/validation': typeof ValidationRoute
 }
@@ -139,7 +132,6 @@ export interface FileRoutesByTo {
   '/persons': typeof PersonsRoute
   '/reports': typeof ReportsRoute
   '/sectors': typeof SectorsRoute
-  '/settings': typeof SettingsRoute
   '/troubleshooting': typeof TroubleshootingRoute
   '/validation': typeof ValidationRoute
 }
@@ -158,7 +150,6 @@ export interface FileRoutesById {
   '/persons': typeof PersonsRoute
   '/reports': typeof ReportsRoute
   '/sectors': typeof SectorsRoute
-  '/settings': typeof SettingsRoute
   '/troubleshooting': typeof TroubleshootingRoute
   '/validation': typeof ValidationRoute
 }
@@ -178,7 +169,6 @@ export interface FileRouteTypes {
     | '/persons'
     | '/reports'
     | '/sectors'
-    | '/settings'
     | '/troubleshooting'
     | '/validation'
   fileRoutesByTo: FileRoutesByTo
@@ -196,7 +186,6 @@ export interface FileRouteTypes {
     | '/persons'
     | '/reports'
     | '/sectors'
-    | '/settings'
     | '/troubleshooting'
     | '/validation'
   id:
@@ -214,7 +203,6 @@ export interface FileRouteTypes {
     | '/persons'
     | '/reports'
     | '/sectors'
-    | '/settings'
     | '/troubleshooting'
     | '/validation'
   fileRoutesById: FileRoutesById
@@ -233,7 +221,6 @@ export interface RootRouteChildren {
   PersonsRoute: typeof PersonsRoute
   ReportsRoute: typeof ReportsRoute
   SectorsRoute: typeof SectorsRoute
-  SettingsRoute: typeof SettingsRoute
   TroubleshootingRoute: typeof TroubleshootingRoute
   ValidationRoute: typeof ValidationRoute
 }
@@ -331,13 +318,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SectorsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/troubleshooting': {
       id: '/troubleshooting'
       path: '/troubleshooting'
@@ -369,7 +349,6 @@ const rootRouteChildren: RootRouteChildren = {
   PersonsRoute: PersonsRoute,
   ReportsRoute: ReportsRoute,
   SectorsRoute: SectorsRoute,
-  SettingsRoute: SettingsRoute,
   TroubleshootingRoute: TroubleshootingRoute,
   ValidationRoute: ValidationRoute,
 }

@@ -2,27 +2,46 @@
 
 ## Source organization
 
-- `src/routes/` contains page-level modules.
-- `src/components/` contains reusable UI, export, print and modal components.
-- `src/lib/` contains calculations, CBMS recognition, verification, exports and utility logic.
-- `src/data/` contains the 2022/2024 dataset adapters and runtime data layer.
-- `src/assets/` contains only application branding/assets required at runtime.
-- `docs/archive/` contains historical implementation notes only.
+- `src/routes/` — page-level modules.
+- `src/components/` — reusable UI, export, print, and modal components.
+- `src/lib/` — calculations, CBMS recognition, verification, exports, Compendium, and security-adjacent helpers.
+- `src/data/` — 2022/2024 runtime data adapters and IndexedDB cache layer. **Do not put raw datasets here.**
+- `src/assets/` — application branding and runtime images only.
+- `scripts/` — project/release validation.
+- `docs/` — current maintainer/user/security documentation.
+
+Historical patch notes are intentionally not kept in the repository. The root `README.md` is the operational source of truth.
+
+## Data safety
+
+Never commit municipal CBMS JSON, `.RData`, `.Rda`, `.RDS`, PSA RSA keys, signing certificates, tokens, or generated release artifacts. Run:
+
+```powershell
+npm run validate:project
+```
+
+before committing.
 
 ## Printing
 
-All system print actions should call `printPayload()` from `src/lib/cbms-export.ts`. This routes the report into the shared `PrintPreviewModal`, which lists printers and printable Folio pages consistently across modules.
+All system print actions should call the shared `printPayload()` route in `src/lib/cbms-export.ts` and reach the shared Print Preview modal. Avoid new page-specific printing implementations.
 
-Do not create page-specific Electron print implementations unless there is a documented hardware requirement.
+## Export encryption
 
-## Sector views
+Do not remove `packageProtected()` or bypass the protected-export workflow for CSV/XLSX/PDF/DOCX. Protected Compendium HTML uses its separate AES-GCM flow in `src/lib/cbms-compendium.ts`.
 
-Sector navigation is intentionally barangay-based. Public sector indicators should end in `by Barangay` or use a dedicated barangay grouping component. Non-barangay roster tabs should not be added back to the main sector selector.
+## Startup security
 
-## Security
+Startup PIN verification and lockout must remain in the Electron main process. Current policy: six numeric digits, three consecutive failures, persistent ten-hour lockout.
 
-The startup PIN is six numeric digits. Verification and lockout logic run in the Electron main process. The current policy is three consecutive incorrect entries followed by a persistent ten-hour lockout.
+## Release hygiene
 
-## Exports
+The release workflow must:
 
-Exports use descriptive document identifiers containing the CBMS year, municipality, report code, timestamp and document reference. Desktop saving uses the native Save As dialog.
+1. check repository safety;
+2. verify `package.json` version == `v<version>` tag;
+3. build the Windows NSIS installer;
+4. validate `latest.yml` against the generated `.exe`;
+5. create exactly one GitHub Release;
+6. upload `.exe`, `latest.yml`, and `.blockmap`;
+7. verify those assets after publishing.

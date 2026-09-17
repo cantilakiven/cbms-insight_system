@@ -1,7 +1,7 @@
 {
   "name": "mutialytics",
-  "version": "1.2.7",
-  "description": "Community-Based Monitoring System (CBMS 2022 / 2024 Desktop Analytics)",
+  "version": "1.2.6",
+  "description": "CBMS Automated Data Conversion & Management System for authorized municipal planning, analysis, reporting, export, and printing workflows.",
   "author": "Kiven Cantila",
   "private": true,
   "sideEffects": false,
@@ -20,7 +20,8 @@
     "format": "prettier --write .",
     "build:cloudflare": "cross-env CLOUDFLARE=true vite build",
     "electron:publish": "npm run build && electron-builder --win nsis --x64 --publish never",
-    "validate:release": "node scripts/validate-release.mjs"
+    "validate:release": "node scripts/validate-release.mjs",
+    "validate:project": "node scripts/check-project-safety.mjs"
   },
   "build": {
     "appId": "com.cbms.insights",
@@ -42,7 +43,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "license": "LICENSE_EULA.txt"
+      "license": "docs/EULA.txt"
     },
     "win": {
       "icon": "src/assets/android-chrome-512x512.png",
