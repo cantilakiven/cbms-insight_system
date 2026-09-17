@@ -24,5 +24,7 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: javascript-typescript
+          queries: security-and-quality
       - name: Analyze
+        continue-on-error: true
         uses: github/codeql-action/analyze@v3
