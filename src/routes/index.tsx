@@ -89,12 +89,12 @@ function Dashboard() {
           <div className="dashboard-visual-grid" />
           <div className="dashboard-visual-glow dashboard-visual-glow-a" />
           <div className="dashboard-visual-glow dashboard-visual-glow-b" />
-          <div className="dashboard-visual-card">
+          {/* <div className="dashboard-visual-card">
             <img src="/cbms-insights-logo.png" alt="CBMS Insights" className="h-20 w-20 rounded-2xl bg-white/95 p-2 shadow-2xl" />
             <div className="mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/70">CBMS Insights</div>
             <div className="mt-1 text-lg font-black text-white">Data → Insight → Action</div>
             <div className="mt-1 text-xs leading-5 text-white/70">Analyze authorized CBMS datasets with a local-first, privacy-conscious workflow.</div>
-          </div>
+          </div> */}
         </div>
       </section>
 

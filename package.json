@@ -1,6 +1,6 @@
 {
   "name": "cbms-insights",
-  "version": "1.3.10",
+  "version": "1.4.10",
   "description": "CBMS Insights — generic offline-first CBMS data conversion, management, analytics, reporting, export, and printing utility.",
   "author": "Kiven Cantila",
   "private": true,

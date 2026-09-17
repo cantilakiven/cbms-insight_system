@@ -57,9 +57,11 @@ The Windows NSIS installer is configured to display this EULA as the installerâ€
 
 15. CREDITS
 Developer: Kiven Cantila
-Developer Facebook: https://www.facebook.com/hello.kwekwe
-UI/UX Designer: Clifford Kevin Bohol
-Tester: Fredrich Cabasag
-Generic software for authorized CBMS data custodians and local government users
+Developer Email: cantilakiven.mailbox01@gmail.com
+System Reviewer 1: Clifford Kevin Bohol
+System Reviewer 2: Fredrich Cabasag
+System Reviewer 3: Ricalen Pableo
+System Reviewer 4: Prince Lowel Sallave AKA(Jodan)
+Generic software for authorized CBMS data custodians and local government users.
 
 This EULA is informational software licensing text and is not a substitute for advice from qualified Philippine legal counsel, the LGU Data Protection Officer, the National Privacy Commission, PSA, or other competent government authority.

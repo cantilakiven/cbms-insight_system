@@ -95,11 +95,20 @@ function SettingsPage() {
     </section>
     <section className="rounded-2xl border border-border bg-muted/30 p-5 text-sm text-muted-foreground">
       <div className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">Credits</div>
-      <div className="mt-2 font-semibold text-foreground">Developed by Kiven Cantila</div>
-      <a className="mt-1 inline-flex text-primary hover:underline" href="https://www.facebook.com/hello.kwekwe" target="_blank" rel="noreferrer">facebook.com/hello.kwekwe</a>
+      <div className="mt-2 font-semibold text-foreground">
+        Developed by{" "}
+        <a 
+          className="text-primary hover:underline" 
+          href="https://www.facebook.com/hello.kwekwe" 
+          target="_blank" 
+          rel="noreferrer"
+        >
+          Kiven Cantila
+        </a>
+      </div>
       <div className="mt-3 grid gap-1.5 text-xs">
-        <div><span className="font-semibold text-foreground">UI/UX Designer:</span> Clifford Kevin Bohol</div>
-        <div><span className="font-semibold text-foreground">Tester:</span> Fredrich Cabasag</div>
+        <div><span className="font-semibold text-foreground">System Reviewer 1:</span> Clifford Kevin Bohol</div>
+        <div><span className="font-semibold text-foreground">System Reviewer 2:</span> Fredrich Cabasag</div>
       </div>
     </section>
   </div>;
