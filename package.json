@@ -1,6 +1,6 @@
 {
   "name": "mutialytics",
-  "version": "1.2.8",
+  "version": "1.2.10",
   "description": "CBMS Automated Data Conversion & Management System for authorized municipal planning, analysis, reporting, export, and printing workflows.",
   "author": "Kiven Cantila",
   "private": true,
