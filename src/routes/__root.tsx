@@ -265,6 +265,20 @@ function SecureLoginGate({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    // Prevent accidental dragging of internal links, text selections, images,
+    // and other renderer elements that can expose the localhost app URL to the
+    // user's browser. File drag-and-drop import remains available because this
+    // only cancels the dragstart event, not dragover/drop.
+    const stopRendererDrag = (event: DragEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    document.addEventListener("dragstart", stopRendererDrag, true);
+    return () => document.removeEventListener("dragstart", stopRendererDrag, true);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <SecureLoginGate>

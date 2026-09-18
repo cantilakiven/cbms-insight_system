@@ -1,5 +1,7 @@
 # CBMS Insights — CBMS Automated Data Conversion & Management System
 
+**Current source baseline: v1.4.12**
+
 **Authorized CBMS Data Custodian · Selected local area**
 
 CBMS Insights is an offline-first desktop application for authorized local-government personnel who need to read, validate, organize, analyze, compare, export, and print Community-Based Monitoring System (CBMS) data without writing code.
@@ -953,3 +955,70 @@ A successful validation means the source tree contains no detected raw CBMS JSON
 **Tester:** Fredrich Cabasag  
 
 CBMS Insights is a generic CBMS processing and analytics utility designed for authorized users across different local areas.
+## Localhost and browser exposure protection
+
+The packaged desktop build keeps the application server on `127.0.0.1` and requires a random per-launch `X-CBMS-Session` capability header. A copied or dragged localhost URL therefore returns `403 Forbidden` when opened outside the Electron session. Renderer dragging is disabled, and packaged builds block DevTools shortcuts and arbitrary filesystem debug reads. See `docs/LOCALHOST_SECURITY.md` for the threat model and limitations.
+### Local URL exposure hardening (v1.4.11)
+
+The packaged Electron runtime binds its local server to `127.0.0.1` and now requires a random per-launch `X-CBMS-Session` capability header. A copied or dragged localhost URL opened in another browser therefore returns `403 Forbidden` instead of loading the application. Internal renderer dragging is disabled, production DevTools shortcuts are blocked, and the renderer can no longer request arbitrary filesystem reads. `npm run dev` remains a normal browser development server by design.
+
+
+---
+
+## v1.4.11+ security hardening and v1.4.12 reporting synchronization
+
+### Local Electron/localhost security hardening
+
+The packaged desktop application uses a loopback-only local application server for its web UI. A localhost URL by itself is **not** treated as an authentication credential.
+
+The hardened build adds the following controls:
+
+1. **Per-launch session capability** — Electron generates a cryptographically random session capability at startup and requires it on application requests. The capability is kept in memory, is not written to the URL, and is discarded when the application exits.
+2. **Loopback binding** — the local server binds to `127.0.0.1`, not `0.0.0.0`, so the application is not intentionally exposed as a LAN web server.
+3. **Unauthorized localhost requests are rejected** — copying a route such as `http://127.0.0.1:<port>/persons?q=` into an unrelated browser does not provide a valid application session and should receive an authorization failure instead of the CBMS application.
+4. **No URL credential** — sensitive session material is not placed into query strings or route paths.
+5. **External-navigation controls** — the Electron application restricts navigation to its application origin and prevents arbitrary websites from replacing the application document.
+6. **Drag-out protection** — application content cannot be dragged out as an ordinary browser link while file drop/import functionality remains available.
+7. **Production DevTools restriction** — developer tools and common DevTools keyboard shortcuts are blocked in packaged production builds to reduce casual inspection of the renderer.
+8. **Restricted debug file access** — arbitrary file-reading through the renderer is not exposed to packaged production builds. Debugging helpers are development-only and production access is limited to the intended local export-log path.
+9. **Response hardening** — the local server emits security-oriented headers such as `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, and `Referrer-Policy: no-referrer`.
+
+### Security boundary and Burp/localhost considerations
+
+These controls are designed to stop a copied localhost route from being treated as an unauthenticated public web endpoint. They are **not** a guarantee against a person who has administrator-level control of the same Windows machine and can inspect a running process, instrument Electron, or obtain the in-memory session capability. Physical workstation security, Windows account security, disk encryption, and authorized-user controls remain part of the overall security boundary.
+
+For the strongest architecture, future versions can remove the TCP localhost web server entirely and use an Electron custom protocol and IPC-only data path. That architectural change is intentionally separate from the current stable hardening layer.
+
+### Compendium and Sectors synchronization
+
+Starting with v1.4.12, the Report Compendium is explicitly synchronized with the data exposed by the Sectors tab. New or extended sector reports are included in the Compendium instead of existing only as an on-screen report.
+
+When the Compendium is generated, the `Sectors by Barangay` chapter includes:
+
+- the existing priority-sector reports;
+- Summary tables;
+- Summary by Barangay tables sorted A–Z;
+- optional A–Z detailed names when **Include complete sector rosters** is enabled;
+- non-4Ps and labor-force views;
+- food-security views including skipped meals and explicit meal-frequency reports;
+- livelihood and education distributions;
+- safe-walking-at-night household-head records;
+- Agriculture & Rural Livelihood reports for both CBMS 2022 and CBMS 2024.
+
+The agriculture chapter includes:
+
+1. **Farming & Non-Farming Households by Barangay** — household and farming-household population counts, Summary, Summary by Barangay, and A–Z person rows when names are enabled.
+2. **Farming Household Poverty / Low-Income Proxy by Barangay** — farming-household reported-income coverage and the < ₱20,000 income-based proxy. This is explicitly labeled a proxy and is not presented as an official PSA poverty-line classification.
+3. **Agricultural vs Non-Agricultural Employment by Barangay** — agricultural and non-agricultural employment counts for persons aged 15+, with occupation/industry context.
+4. **Agricultural Household Income by Barangay** — reported-income counts, averages, medians, and below-₱20,000 counts using household-level H06 Total Family Income.
+5. **Farming Households with Reported Income by Barangay** — farming-household coverage, reported income, average household income, agricultural persons, class of work, farmer/agricultural activity, occupation, and industry.
+
+All detailed barangay tables are sorted A–Z. Person and household names within barangays are also sorted A–Z.
+
+### Compendium zero-data rule
+
+A sector report that has no matching records is omitted from the generated book rather than producing pages containing only zero-valued records. This keeps the exported Compendium focused on data that actually exists in the selected CBMS year.
+
+### Year integrity
+
+Every Compendium calculation and export is tied to the selected CBMS year. A CBMS 2022 book reads only the 2022 normalized dataset; a CBMS 2024 book reads only the 2024 normalized dataset. Comparative analysis intentionally reads both years and identifies the two years explicitly.

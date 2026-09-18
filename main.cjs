@@ -540,8 +540,14 @@ ipcMain.handle("print-html", async (event, payload) => {
 
 ipcMain.handle("debug-read-file", (_, filePath) => {
   try {
-    if (!filePath || !fs.existsSync(filePath)) return null;
-    return fs.readFileSync(filePath, "utf-8");
+    // Never expose arbitrary filesystem reads from the renderer. In packaged
+    // builds the only permitted debug read is the export log, and only in the
+    // development diagnostics path.
+    const requested = path.resolve(String(filePath || ""));
+    const allowed = path.resolve(getLogFilePath());
+    if (requested !== allowed || !fs.existsSync(allowed)) return null;
+    if (app.isPackaged) return null;
+    return fs.readFileSync(allowed, "utf-8");
   } catch (err) {
     console.error("debug-read-file failed:", err);
     return null;
@@ -604,18 +610,75 @@ async function startServer() {
   }
 
   const port = await getFreePort();
+  // The renderer talks to the local server through a per-launch capability
+  // header. A pasted/dragged localhost URL opened in Chrome, Edge, or Burp
+  // therefore receives 403 instead of the application's HTML/data routes.
+  const sessionToken = crypto.randomBytes(32).toString("base64url");
 
   serverProcess = fork(serverEntry, [], {
-    env: { ...process.env, PORT: String(port), HOST: "127.0.0.1", NODE_ENV: "production" },
+    env: {
+      ...process.env,
+      PORT: String(port),
+      HOST: "127.0.0.1",
+      NODE_ENV: "production",
+      CBMS_SESSION_TOKEN: sessionToken,
+    },
     stdio: ["ignore", "inherit", "inherit", "ipc"],
   });
 
   const url = `http://127.0.0.1:${port}/`;
   await waitForServer(url);
-  return url;
+  return { url, port, token: sessionToken };
 }
 
 let updaterInterval = null;
+
+function installLoopbackSecurity(win, appUrl, sessionToken) {
+  const origin = new URL(appUrl).origin;
+  const filter = { urls: [`${origin}/*`] };
+
+  // Every request made by this Electron webContents receives the per-launch
+  // capability header. Normal browsers have no way to obtain it from the URL.
+  win.webContents.session.webRequest.onBeforeSendHeaders(filter, (details, callback) => {
+    details.requestHeaders["X-CBMS-Session"] = sessionToken;
+    callback({ cancel: false, requestHeaders: details.requestHeaders });
+  });
+
+  // Do not allow the app renderer to navigate this window to an arbitrary URL.
+  win.webContents.on("will-navigate", (event, url) => {
+    try {
+      if (new URL(url).origin !== origin) {
+        event.preventDefault();
+        if (/^https?:\/\//i.test(url)) void shell.openExternal(url);
+      }
+    } catch {
+      event.preventDefault();
+    }
+  });
+
+  win.webContents.on("will-attach-webview", (event) => {
+    // This application does not require embedded webviews; disallow them to
+    // reduce an unnecessary renderer attack surface.
+    event.preventDefault();
+  });
+
+  if (app.isPackaged) {
+    win.webContents.on("devtools-opened", () => {
+      try { win.webContents.closeDevTools(); } catch {}
+    });
+    win.webContents.on("before-input-event", (event, input) => {
+      const blocked =
+        input.type === "keyDown" &&
+        (input.key === "F12" ||
+          (input.control && input.shift && ["I", "J", "C"].includes(String(input.key).toUpperCase())) ||
+          (input.meta && input.alt && String(input.key).toUpperCase() === "I"));
+      if (blocked) event.preventDefault();
+    });
+  }
+
+  win.webContents.session.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
+  win.webContents.session.setPermissionCheckHandler(() => false);
+}
 
 function sendUpdaterEvent(channel, payload = {}) {
   for (const win of BrowserWindow.getAllWindows()) {
@@ -663,14 +726,16 @@ async function createWindow() {
   });
 
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith("http:") || url.startsWith("https:")) {
-      shell.openExternal(url);
-    }
+    try {
+      const protocol = new URL(url).protocol;
+      if (protocol === "http:" || protocol === "https:") void shell.openExternal(url);
+    } catch {}
     return { action: "deny" };
   });
 
-  const url = await startServer();
-  await win.loadURL(url);
+  const server = await startServer();
+  installLoopbackSecurity(win, server.url, server.token);
+  await win.loadURL(server.url);
   // Launch maximized to the Windows work area (taskbar remains visible);
   // this is intentionally not Electron's exclusive fullscreen mode.
   win.maximize();

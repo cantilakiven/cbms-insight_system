@@ -325,6 +325,202 @@ function sourceNote(_year: DataYear) {
   return "";
 }
 
+// ---------------------------------------------------------------------------
+// Extended Sectors -> Compendium coverage
+// Keep this registry aligned with src/routes/sectors.tsx. The Compendium
+// always includes Summary + Summary by Barangay for every added sector view.
+// Detailed A-Z names are added when includeNameLists is enabled.
+// ---------------------------------------------------------------------------
+const extLow = (v: any) => String(v ?? "").toLowerCase();
+const extYes = (v: any) => v === "Yes" || v === "YES" || v === 1 || v === "1" || v === true;
+const extAge = (p: any) => { const n = Number(p?.a05_age); return Number.isFinite(n) ? n : null; };
+const extPageSlug = (v: string) => String(v || "unknown").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "unknown";
+const extTable = (id: string, title: string, columns: BookColumn[], rows: any[], note = "Data extraction: records are taken from the selected CBMS dataset and grouped by the fields shown."): BookTable => ({ id, title, columns, rows, note });
+
+const extAgriRe = /\b(farm|farmer|farming|agri|agricultur|crop|rice|corn|coconut|sugar|livestock|poultry|forestry|plantation|nursery|hatchery)\b/i;
+const extIsAgri = (p: any) => {
+  if (extYes(p?.e17_farmer)) return true;
+  const occupation = [p?.e05_occupation_group, p?.legacy_occupation_text, p?.e05_psoc].map(extLow).join(" ");
+  const industry = [p?.e06_industry_group, p?.legacy_industry_text, p?.e06_psic].map(extLow).join(" ");
+  return extAgriRe.test(occupation) || extAgriRe.test(industry);
+};
+const extIsEmployed = (p: any) => {
+  const v = extLow(p?.e01_employment_status);
+  return v === "employed" || (v.includes("employed") && !v.includes("unemployed") && !v.includes("not employed"));
+};
+const extFourPs = (p: any) => extYes(p?._hh?.m05_a_4ps) || extYes(p?._hh?.m06_a_benefit_4ps) || extYes(p?.m06_a_benefit_4ps);
+const extEduLevel = (p: any): string => {
+  const v = extLow(p?.a11_hgc_level || p?.a11_hgc_group);
+  if (!v) return txt(p?.a11_hgc_level || p?.a11_hgc_group);
+  if (v.includes("early childhood") || v.includes("pre-school") || v.includes("preschool")) return "Early childhood education";
+  if (v.includes("elementary")) return "Elementary level";
+  if (v.includes("junior high")) return "Junior high school level";
+  if (v.includes("senior high")) return "Senior high school level";
+  if (v.includes("post-secondary") || v.includes("post secondary")) return "Post-secondary non-tertiary level";
+  if (v.includes("short-cycle") || v.includes("short cycle")) return "Short-cycle tertiary level";
+  if (v.includes("college") || v.includes("baccalaureate") || v.includes("bachelor")) return "College level";
+  if (v.includes("master")) return "Masteral level";
+  if (v.includes("doctor")) return "Doctoral level";
+  return txt(p?.a11_hgc_level || p?.a11_hgc_group);
+};
+const extFarmerType = (p: any) => {
+  const raw = p?.legacy_raw || {};
+  const text = [p?.e05_occupation_group, p?.legacy_occupation_text, p?.e05_psoc, p?.e06_industry_group, p?.legacy_industry_text, p?.e06_psic, raw?.E07_OCCUPATION, raw?.E09_KIND_OF_BUSINESS_OR_INDUSTRY].map(extLow).join(" ");
+  if (text.includes("coconut")) return "Coconut farmer / coconut production";
+  if (text.includes("rice")) return "Rice farming";
+  if (text.includes("corn") || text.includes("maize")) return "Corn farming";
+  if (text.includes("crop") || text.includes("vegetable") || text.includes("fruit") || text.includes("plantation")) return "Crop farming";
+  if (text.includes("livestock") || text.includes("cattle") || text.includes("swine") || text.includes("hog") || text.includes("goat")) return "Livestock farming";
+  if (text.includes("poultry") || text.includes("chicken") || text.includes("hatchery")) return "Poultry farming";
+  if (text.includes("aquaculture") || text.includes("fishpond") || text.includes("fish farm")) return "Aquaculture";
+  if (text.includes("forestry") || text.includes("logging")) return "Forestry";
+  if (extYes(raw?.G11_ENGAGED_IN_AGRI) || extYes(raw?.G12_A_GROWING_OF_CROPS)) return "Crop / agricultural farming";
+  if (extYes(raw?.G12_B_LIVESTOCK_AND_POULTRY)) return "Livestock / poultry farming";
+  if (raw?.G13_TYPE_OF_ENGAGEMENT_IN_FARMING !== undefined && String(raw.G13_TYPE_OF_ENGAGEMENT_IN_FARMING).trim()) return `Farming engagement (CBMS field: ${String(raw.G13_TYPE_OF_ENGAGEMENT_IN_FARMING)})`;
+  return extYes(p?.e17_farmer) ? "Farmer / agricultural activity" : "Agricultural livelihood";
+};
+
+const EXT_GENERIC: { key: string; label: string; match: (p: any) => boolean; extra: BookColumn[] }[] = [
+  { key: "non_fourps_members_by_brgy", label: "Non-4Ps Members by Barangay", match: p => !extFourPs(p), extra: [{key:"a02_relation_to_hh_head",label:"Relation"},{key:"m06_a_benefit_4ps",label:"Received 4Ps Benefit"}] },
+  { key: "safe_walking_at_night_by_brgy", label: "Safe Walking at Night by Barangay", match: p => isHead(p) && ["safe","very safe"].includes(String(p._hh?.l01_safe_walking_alone || "").toLowerCase()), extra: [{key:"l01_safe_walking_alone",label:"Safety at Night"}] },
+  { key: "early_childhood_by_brgy_names", label: "Early Childhood by Barangay", match: p => extEduLevel(p) === "Early childhood education", extra: [{key:"a11_hgc_level",label:"Educational Level"},{key:"d01_currently_attending_school",label:"Attending School"}] },
+];
+
+function appendGenericSectorCoverage(tables: BookTable[], persons: any[], households: any[], barangayNames: string[], perBarangay: Map<string,{persons:any[];households:any[]}>, includeNameLists: boolean, note: string) {
+  const addFlag = (def: typeof EXT_GENERIC[number]) => {
+    const grouped = new Map<string, any[]>(); barangayNames.forEach(b=>grouped.set(b,[]));
+    for (const p of persons) if (def.match(p)) { const b=txt(p.area_name); if(!grouped.has(b)) grouped.set(b,[]); grouped.get(b)!.push(p); }
+    const matched=Array.from(grouped.values()).reduce((n,r)=>n+r.length,0); if(!matched) return;
+    tables.push(extTable(`ext-${def.key}-summary`, def.label,[{key:"summary",label:"Summary"},{key:"value",label:"Count / Value"},{key:"percentage",label:"Percentage of population (%Population)"}], [
+      {summary:def.label,value:matched,percentage:share(matched,persons.length)},{summary:`Not in ${def.label}`,value:Math.max(0,persons.length-matched),percentage:share(Math.max(0,persons.length-matched),persons.length)},{summary:"Total Population",value:persons.length,percentage:persons.length?"100.00%":"0.00%"},{summary:"No. of Barangay",value:barangayNames.length,percentage:"-"}
+    ], `${note} Count = matching normalized person/household records. Percentage of population = count ÷ total population × 100.`));
+    const by=barangayNames.map(b=>{const total=perBarangay.get(b)!.persons.length;const c=grouped.get(b)?.length||0;return {barangay:b,count:c,total,share:share(c,total)};});
+    by.push({barangay:"TOTAL",count:matched,total:persons.length,share:share(matched,persons.length)});
+    tables.push(extTable(`ext-${def.key}-by-brgy`,`${def.label} - Summary by Barangay`,[{key:"barangay",label:"Barangay"},{key:"count",label:def.label},{key:"total",label:"Total Population"},{key:"share",label:"Percentage of population (%Population)"}],by,`${note} Barangays are sorted A-Z. Percent = matching records ÷ barangay population × 100.`));
+    if(!includeNameLists) return;
+    const cols=[{key:"_full_name",label:"Full Name"},{key:"a03_sex",label:"Sex"},{key:"a05_age",label:"Age"},{key:"area_name",label:"Barangay"},...def.extra] as BookColumn[];
+    for(const b of barangayNames){const rows=(grouped.get(b)||[]).sort((a,b2)=>byName(a._full_name,b2._full_name)).map(p=>{const row:any={_full_name:p._full_name,a03_sex:txt(p.a03_sex),a05_age:extAge(p)??"Not Stated",area_name:b};for(const c of def.extra)row[c.key]=txt(c.key.startsWith("_")?p[c.key.slice(1)]:p[c.key]);return row;});if(!rows.length)continue;tables.push(extTable(`ext-${def.key}-detail-${extPageSlug(b)}`,`Barangay: ${b} — ${def.label}`,cols,rows,`${note} Detailed A-Z roster for ${def.label}.`));}
+  };
+  EXT_GENERIC.forEach(addFlag);
+
+  const addPersonFilter=(key:string,label:string,predicate:(p:any)=>boolean)=>{
+    const matched=persons.filter(predicate); if(!matched.length) return;
+    tables.push(extTable(`ext-${key}-summary`,label,[{key:"summary",label:"Summary"},{key:"value",label:"Count / Value"},{key:"percentage",label:"Percentage of population (%Population)"}],[{summary:label,value:matched.length,percentage:share(matched.length,persons.length)},{summary:`Not ${label}`,value:Math.max(0,persons.length-matched.length),percentage:share(Math.max(0,persons.length-matched.length),persons.length)},{summary:"Total Population",value:persons.length,percentage:"100.00%"},{summary:"No. of Barangay",value:barangayNames.length,percentage:"-"}],`${note} Derived from normalized CBMS labor/employment fields.`));
+    const by=barangayNames.map(b=>{const total=perBarangay.get(b)!.persons.length;const c=perBarangay.get(b)!.persons.filter(predicate).length;return {barangay:b,count:c,total,share:share(c,total)};});by.push({barangay:"TOTAL",count:matched.length,total:persons.length,share:share(matched.length,persons.length)});
+    tables.push(extTable(`ext-${key}-by-brgy`,`${label} - Summary by Barangay`,[{key:"barangay",label:"Barangay"},{key:"count",label:label},{key:"total",label:"Total Population"},{key:"share",label:"Percentage of population (%Population)"}],by));
+    if(!includeNameLists)return;
+    for(const b of barangayNames){const rows=perBarangay.get(b)!.persons.filter(predicate).sort((a,b2)=>byName(a._full_name,b2._full_name)).map(p=>({_full_name:p._full_name,a03_sex:txt(p.a03_sex),a05_age:extAge(p)??"Not Stated",status:label,area_name:b,e01_employment_status:txt(p.e01_employment_status)}));if(!rows.length)continue;tables.push(extTable(`ext-${key}-detail-${extPageSlug(b)}`,`Barangay: ${b} — ${label}`,[{key:"_full_name",label:"Full Name"},{key:"a03_sex",label:"Sex"},{key:"a05_age",label:"Age"},{key:"status",label:"Status"},{key:"e01_employment_status",label:"Employment Status"}],rows));}
+  };
+  const labor=(p:any)=>{const a=extAge(p);return a!==null&&a>=15&&extLow(p.e01_labor_force_participation).includes("labor force");};
+  addPersonFilter("in-lf","In Labor Force",labor);
+  addPersonFilter("not-in-lf","Not in Labor Force",(p)=>{const a=extAge(p);return a!==null&&a>=15&&!labor(p);});
+
+  const addHeadHouseholdFilter=(key:string,label:string,predicate:(h:any)=>boolean)=>{
+    const matchedH=households.filter(predicate);if(!matchedH.length)return;
+    const matchedKeys=new Set(matchedH.map(hhKey));
+    const matchedHeads=persons.filter(p=>matchedKeys.has(hhKey(p))&&isHead(p));
+    const allHeads=persons.filter(isHead);
+    tables.push(extTable(`ext-${key}-summary`,label,[{key:"summary",label:"Summary"},{key:"value",label:"Count / Value"},{key:"percentage",label:"Percentage of household heads (%Households)"}],[{summary:label,value:matchedHeads.length,percentage:share(matchedHeads.length,allHeads.length)},{summary:"Other Household Heads",value:Math.max(0,allHeads.length-matchedHeads.length),percentage:share(Math.max(0,allHeads.length-matchedHeads.length),allHeads.length)},{summary:"Total Household Heads",value:allHeads.length,percentage:"100.00%"},{summary:"No. of Barangay",value:barangayNames.length,percentage:"-"}],`${note} Household-level indicator displayed through household heads. Percentage = matching household heads ÷ total household heads × 100.`));
+    const by=barangayNames.map(b=>{const total=perBarangay.get(b)!.persons.filter(isHead).length;const c=perBarangay.get(b)!.persons.filter(p=>isHead(p)&&matchedKeys.has(hhKey(p))).length;return {barangay:b,count:c,total,share:share(c,total)};});by.push({barangay:"TOTAL",count:matchedHeads.length,total:allHeads.length,share:share(matchedHeads.length,allHeads.length)});
+    tables.push(extTable(`ext-${key}-by-brgy`,`${label} - Summary by Barangay`,[{key:"barangay",label:"Barangay"},{key:"count",label:label},{key:"total",label:"Total Household Heads"},{key:"share",label:"Percentage of household heads (%Households)"}],by));
+    if(!includeNameLists)return;
+    for(const b of barangayNames){const rows=perBarangay.get(b)!.persons.filter(p=>isHead(p)&&matchedKeys.has(hhKey(p))).sort((a,b2)=>byName(a._full_name,b2._full_name)).map(p=>({_full_name:p._full_name,a03_sex:txt(p.a03_sex),a05_age:extAge(p)??"Not Stated",status:label,household_income:getHouseholdIncome(p._hh)}));if(!rows.length)continue;tables.push(extTable(`ext-${key}-detail-${extPageSlug(b)}`,`Barangay: ${b} — ${label}`,[{key:"_full_name",label:"Full Name"},{key:"a03_sex",label:"Sex"},{key:"a05_age",label:"Age"},{key:"status",label:"Status"},{key:"household_income",label:"Household Income"}],rows));}
+  };
+  addHeadHouseholdFilter("skipped-meal","Households That Skipped a Meal",h=>String(h.g04_skipped_meal??"").toLowerCase()==="yes");
+
+  const addDistribution=(key:string,label:string,category:(p:any)=>string)=>{
+    const values=persons.map(p=>category(p)||"Not Stated");const total=values.length;if(!total)return;
+    const cat=new Map<string,number>();values.forEach(v=>cat.set(v,(cat.get(v)||0)+1));
+    tables.push(extTable(`ext-${key}-summary`,label,[{key:"category",label:"Category"},{key:"count",label:"Persons"},{key:"percent",label:"Percentage Rate (%Rate)"}],Array.from(cat.entries()).sort((a,b)=>b[1]-a[1]||byName(a[0],b[0])).map(([category,count])=>({category,count,percent:share(count,total)})),`${note} Distribution across all person records.`));
+    const categoryNames = Array.from(cat.keys()).sort(byName);
+    const distributionByBarangay = barangayNames.map(b => {
+      const bp = perBarangay.get(b)!.persons;
+      const row: any = { barangay: b, total: bp.length };
+      for (const categoryName of categoryNames) row[categoryName] = bp.filter(p => (category(p) || "Not Stated") === categoryName).length;
+      return row;
+    });
+    const distributionColumns: BookColumn[] = [
+      { key: "barangay", label: "Barangay" },
+      ...categoryNames.map(categoryName => ({ key: categoryName, label: categoryName })),
+      { key: "total", label: "Total Population" },
+    ];
+    tables.push(extTable(`ext-${key}-by-brgy`,`${label} - Summary by Barangay`,distributionColumns,distributionByBarangay,`${note} Each category column shows the number of persons in the barangay assigned to that category; categories are mutually represented by the normalized field value and may include Not Stated.`));
+    if(!includeNameLists)return;
+    for(const b of barangayNames){const rows=perBarangay.get(b)!.persons.map(p=>({_full_name:p._full_name,a03_sex:txt(p.a03_sex),a05_age:extAge(p)??"Not Stated",category:category(p)||"Not Stated"})).sort((a,b2)=>byName(a._full_name,b2._full_name));if(!rows.length)continue;tables.push(extTable(`ext-${key}-detail-${extPageSlug(b)}`,`Barangay: ${b} — ${label}`,[{key:"_full_name",label:"Full Name"},{key:"a03_sex",label:"Sex"},{key:"a05_age",label:"Age"},{key:"category",label:"Category"}],rows));}
+  };
+  addDistribution("basis-payment","Salary / Wage Type by Barangay",p=>txt(p.e09_basis_of_payment));
+  addDistribution("class-worker","Class of Worker by Barangay",p=>txt(p.e08_class_of_worker));
+  addDistribution("education-level","Educational Level by Barangay",p=>extEduLevel(p));
+
+  const addAgeBand=(key:string,label:string,predicate:(p:any)=>boolean)=>addPersonFilter(key,label,predicate);
+  addAgeBand("age-0-5","0-5 Years Old by Barangay",p=>{const a=extAge(p);return a!==null&&a<=5;});
+
+  const addMealFrequency = (key: string, label: string, sourcePattern: RegExp) => {
+    const groups = new Map<string, any[]>(); barangayNames.forEach(b => groups.set(b, []));
+    for (const h of households) {
+      const info = getMealFrequency(h);
+      if (!sourcePattern.test(info.source || "")) continue;
+      const b = txt(h.area_name); if (!groups.has(b)) groups.set(b, []);
+      const head = persons.find(p => hhKey(p) === hhKey(h) && isHead(p));
+      groups.get(b)!.push({ _full_name: head?._full_name || "Not Stated", a03_sex: txt(head?.a03_sex), a05_age: extAge(head) ?? "Not Stated", frequency: info.label });
+    }
+    const matched = Array.from(groups.values()).reduce((n,r)=>n+r.length,0); if(!matched) return;
+    tables.push(extTable(`ext-${key}-summary`,label,[{key:"summary",label:"Summary"},{key:"value",label:"Households"},{key:"percentage",label:"Percentage of households (%Households)"}], [{summary:label,value:matched,percentage:share(matched,households.length)},{summary:"Total households",value:households.length,percentage:households.length?"100.00%":"0.00%"}],`${note} Only explicit meal-frequency source fields are used. CBMS I02 food-consumption frequency is not interpreted as meals per day.`));
+    tables.push(extTable(`ext-${key}-by-brgy`,`${label} - Summary by Barangay`,[{key:"barangay",label:"Barangay"},{key:"count",label:"Households"},{key:"total",label:"Total Households"},{key:"share",label:"Percentage of households (%Households)"}],barangayNames.map(b=>{const total=perBarangay.get(b)!.households.length;const c=groups.get(b)?.length||0;return {barangay:b,count:c,total,share:share(c,total)}})));
+    if(!includeNameLists)return;
+    for(const b of barangayNames){const rows=(groups.get(b)||[]).sort((a,b2)=>byName(a._full_name,b2._full_name));if(!rows.length)continue;tables.push(extTable(`ext-${key}-detail-${extPageSlug(b)}`,`Barangay: ${b} — ${label}`,[{key:"_full_name",label:"Full Name"},{key:"a03_sex",label:"Sex"},{key:"a05_age",label:"Age"},{key:"frequency",label:"Meals / Frequency"}],rows,`${note} Head-of-household detail. Explicit source only.`));}
+  };
+  addMealFrequency("food-frequency-daily","Explicit Daily Meal Frequency by Barangay",/day/i);
+  addMealFrequency("food-frequency-weekly","Explicit Weekly Food Frequency by Barangay",/week/i);
+}
+
+function appendAgricultureSectorCoverage(tables: BookTable[], persons: any[], households: any[], barangayNames: string[], perBarangay: Map<string,{persons:any[];households:any[]}>, year: DataYear, includeNameLists: boolean, note: string) {
+  const hhPeople=new Map<string,any[]>(); for(const p of persons){const k=hhKey(p);if(!hhPeople.has(k))hhPeople.set(k,[]);hhPeople.get(k)!.push(p);}
+  const hhInfo=new Map<string,{farming:boolean;income:number|null;head:any|null}>();
+  for(const h of households){const k=hhKey(h);const people=hhPeople.get(k)||[];hhInfo.set(k,{farming:people.some(extIsAgri),income:getHouseholdIncome(h),head:people.find(isHead)||people[0]||null});}
+  const farmingHH=households.filter(h=>hhInfo.get(hhKey(h))?.farming); const reported=farmingHH.filter(h=>hhInfo.get(hhKey(h))?.income!==null); const low=reported.filter(h=>(hhInfo.get(hhKey(h))!.income as number)<20000);
+  const summary = (id:string,title:string,rows:any[],noteText:string)=>{if(!rows.length)return;tables.push(extTable(id,title,[{key:"summary",label:"Summary"},{key:"value",label:"Count / Value"},{key:"percentage",label:"Percentage Rate (%Rate)"}],rows,noteText));};
+  const by = (id:string,title:string,cols:BookColumn[],rows:any[],noteText:string)=>{if(rows.length)tables.push(extTable(id,title,cols,rows,noteText));};
+  const details = (prefix:string,title:string,rowsBy:Map<string,any[]>,cols:BookColumn[])=>{if(!includeNameLists)return;for(const b of barangayNames){const rows=(rowsBy.get(b)||[]).sort((a,b2)=>byName(a._full_name||a._household_head||"",b2._full_name||b2._household_head||""));if(!rows.length)continue;tables.push(extTable(`${prefix}-${extPageSlug(b)}`,`Barangay: ${b} — ${title}`,cols,rows));}};
+
+  const farmPop=persons.filter(p=>hhInfo.get(hhKey(p))?.farming).length;
+  summary("agri-farming-summary","Farming & Non-Farming Households by Barangay",[
+    {summary:"Farming Households",value:farmingHH.length,percentage:share(farmingHH.length,households.length)},
+    {summary:"Non-Farming Households",value:Math.max(0,households.length-farmingHH.length),percentage:share(Math.max(0,households.length-farmingHH.length),households.length)},
+    {summary:"Farming-Household Population",value:farmPop,percentage:share(farmPop,persons.length)},
+    {summary:"Total Households",value:households.length,percentage:households.length?"100.00%":"0.00%"},{summary:"Total Population",value:persons.length,percentage:persons.length?"100.00%":"0.00%"},{summary:"No. of Barangay",value:barangayNames.length,percentage:"-"}
+  ],`${note} Method: farming household = household with at least one agricultural/farming person. CBMS ${year}.`);
+  by("agri-farming-by-brgy","Farming & Non-Farming Households by Barangay - Summary by Barangay",[{key:"barangay",label:"Barangay"},{key:"farming",label:"Farming Households"},{key:"non_farming",label:"Non-Farming Households"},{key:"total",label:"Total Households"},{key:"farming_population",label:"Farming-Household Population"},{key:"population_rate",label:"Percentage of population (%Population)"}],barangayNames.map(b=>{const bp=perBarangay.get(b)!;const f=bp.households.filter(h=>hhInfo.get(hhKey(h))?.farming).length;const fp=bp.persons.filter(p=>hhInfo.get(hhKey(p))?.farming).length;return {barangay:b,farming:f,non_farming:bp.households.length-f,total:bp.households.length,farming_population:fp,population_rate:share(fp,bp.persons.length)}}),`${note} Barangays sorted A-Z.`);
+  const farmRows=new Map<string,any[]>();barangayNames.forEach(b=>farmRows.set(b,[]));for(const p of persons)if(hhInfo.get(hhKey(p))?.farming)farmRows.get(txt(p.area_name))!.push({_full_name:p._full_name,a03_sex:txt(p.a03_sex),a05_age:extAge(p)??"Not Stated",livelihood:"Farming Household"});details("agri-farming-detail","Farming & Non-Farming Households by Barangay",farmRows,[{key:"_full_name",label:"Full Name"},{key:"a03_sex",label:"Sex"},{key:"a05_age",label:"Age"},{key:"livelihood",label:"Household Livelihood"}]);
+
+  if(reported.length){
+    const incomes=reported.map(h=>hhInfo.get(hhKey(h))!.income as number).filter(Number.isFinite).sort((a,b)=>a-b);const avg=incomes.length?incomes.reduce((a,x)=>a+x,0)/incomes.length:null;const med=incomes.length?(incomes.length%2?incomes[(incomes.length-1)/2]:(incomes[incomes.length/2-1]+incomes[incomes.length/2])/2):null;
+    const farmerRows=new Map<string,any[]>();barangayNames.forEach(b=>farmerRows.set(b,[]));for(const p of persons){const inf=hhInfo.get(hhKey(p));if(!inf?.farming||inf.income===null||!extIsAgri(p))continue;farmerRows.get(txt(p.area_name))!.push({_full_name:p._full_name,a03_sex:txt(p.a03_sex),a05_age:extAge(p)??"Not Stated",household_income:inf.income,class_of_work:txt(p.e08_class_of_worker),farmer_type:extFarmerType(p),occupation:txt(p.e05_occupation_group||p.legacy_occupation_text||p.e05_psoc),industry:txt(p.e06_industry_group||p.legacy_industry_text||p.e06_psic)});}
+    summary("agri-reported-income-summary","Farming Households with Reported Income by Barangay",[
+      {summary:"Farming Households",value:farmingHH.length},{summary:"Farming Households with Reported Income",value:reported.length,percentage:share(reported.length,farmingHH.length)},{summary:"Agricultural Persons in Reported-Income Households",value:Array.from(farmerRows.values()).reduce((n,r)=>n+r.length,0)},{summary:"Average Reported Family Income",value:avg===null?"N/A":`₱${avg.toLocaleString(undefined,{maximumFractionDigits:2})}`},{summary:"Median Reported Family Income",value:med===null?"N/A":`₱${med.toLocaleString(undefined,{maximumFractionDigits:2})}`},{summary:"No. of Barangay",value:barangayNames.length,percentage:"-"}
+    ],`${note} Reported Family Income is household-level H06 Total Family Income; it is not an individual salary. Percent = reported-income farming households ÷ all farming households × 100.`);
+    by("agri-reported-income-by-brgy","Farming Households with Reported Income by Barangay - Summary by Barangay",[{key:"barangay",label:"Barangay"},{key:"reported",label:"Farming HH with Reported Income"},{key:"farming",label:"Total Farming HH"},{key:"rate",label:"Percentage Rate (%Rate)"},{key:"agri_persons",label:"Agricultural Persons"},{key:"average_income",label:"Average Reported Family Income"}],barangayNames.map(b=>{const bp=perBarangay.get(b)!;const f=bp.households.filter(h=>hhInfo.get(hhKey(h))?.farming);const r=f.filter(h=>hhInfo.get(hhKey(h))?.income!==null);const inc=r.map(h=>hhInfo.get(hhKey(h))!.income as number);const av=inc.length?inc.reduce((a,x)=>a+x,0)/inc.length:null;const ap=bp.persons.filter(p=>hhInfo.get(hhKey(p))?.farming&&hhInfo.get(hhKey(p))?.income!==null&&extIsAgri(p)).length;return {barangay:b,reported:r.length,farming:f.length,rate:share(r.length,f.length),agri_persons:ap,average_income:av===null?"N/A":`₱${av.toLocaleString(undefined,{maximumFractionDigits:2})}`}}),`${note} H06 is a household total. Barangays sorted A-Z.`);
+    details("agri-reported-income-detail","Farming Households with Reported Income by Barangay",farmerRows,[{key:"_full_name",label:"Full Name"},{key:"a03_sex",label:"Sex"},{key:"a05_age",label:"Age"},{key:"household_income",label:"Reported Family Income"},{key:"class_of_work",label:"Class of Work"},{key:"farmer_type",label:"Farmer / Agricultural Activity"},{key:"occupation",label:"Occupation"},{key:"industry",label:"Industry"}]);
+
+    if(low.length){
+      summary("agri-poverty-summary","Farming Household Poverty / Low-Income Proxy by Barangay",[
+        {summary:"Farming Households",value:farmingHH.length},{summary:"Farming Households with Reported Income",value:reported.length,percentage:share(reported.length,farmingHH.length)},{summary:"Farming Households Below ₱20,000",value:low.length,percentage:share(low.length,reported.length)},{summary:"Magnitude of Low-Income Farming Households",value:low.length},{summary:"No. of Barangay",value:barangayNames.length,percentage:"-"}
+      ],`${note} Income-based proxy only. Rate = low-income farming households ÷ farming households with reported income × 100; this is not an official poverty-line classification.`);
+      by("agri-poverty-by-brgy","Farming Household Poverty / Low-Income Proxy by Barangay - Summary by Barangay",[{key:"barangay",label:"Barangay"},{key:"farming",label:"Farming Households"},{key:"reported",label:"Reported Income"},{key:"below20k",label:"Below ₱20,000"},{key:"rate",label:"Percentage Rate (%Rate)"},{key:"magnitude",label:"Magnitude"}],barangayNames.map(b=>{const bp=perBarangay.get(b)!;const f=bp.households.filter(h=>hhInfo.get(hhKey(h))?.farming);const r=f.filter(h=>hhInfo.get(hhKey(h))?.income!==null);const l=r.filter(h=>(hhInfo.get(hhKey(h))!.income as number)<20000);return {barangay:b,farming:f.length,reported:r.length,below20k:l.length,rate:share(l.length,r.length),magnitude:l.length}}),`${note} Same income-based proxy as the Sectors tab.`);
+    }
+    const incomeRows=new Map<string,any[]>();barangayNames.forEach(b=>incomeRows.set(b,[]));for(const h of reported){const inf=hhInfo.get(hhKey(h))!;const head=inf.head;const source=hhPeople.get(hhKey(h))?.find(extIsAgri);incomeRows.get(txt(h.area_name))!.push({_full_name:head?head._full_name:"Not Stated",a03_sex:txt(head?.a03_sex),a05_age:extAge(head)??"Not Stated",household_income:inf.income,agri_source:source?txt(source.e06_industry_group||source.e05_occupation_group||source.legacy_industry_text||source.legacy_occupation_text):"Not Stated"});}
+    by("agri-income-by-brgy","Agricultural Household Income by Barangay - Summary by Barangay",[{key:"barangay",label:"Barangay"},{key:"farming",label:"Farming Households"},{key:"reported",label:"Reported Income"},{key:"average_income",label:"Average Reported Family Income"},{key:"below20k",label:"Below ₱20,000"},{key:"rate",label:"Percentage Rate (%Rate)"}],barangayNames.map(b=>{const f=perBarangay.get(b)!.households.filter(h=>hhInfo.get(hhKey(h))?.farming);const r=f.filter(h=>hhInfo.get(hhKey(h))?.income!==null);const inc=r.map(h=>hhInfo.get(hhKey(h))!.income as number);const av=inc.length?inc.reduce((a,x)=>a+x,0)/inc.length:null;const l=inc.filter(v=>v<20000).length;return {barangay:b,farming:f.length,reported:r.length,average_income:av===null?"N/A":`₱${av.toLocaleString(undefined,{maximumFractionDigits:2})}`,below20k:l,rate:share(l,r.length)}}),`${note} Average = sum of reported H06 household income ÷ reported farming households.`);
+    details("agri-income-detail","Agricultural Household Income by Barangay",incomeRows,[{key:"_full_name",label:"Household Head"},{key:"a03_sex",label:"Sex"},{key:"a05_age",label:"Age"},{key:"household_income",label:"Household Income"},{key:"agri_source",label:"Agricultural Source / Industry"}]);
+  }
+
+  const employed=persons.filter(p=>extAge(p)!==null&&(extAge(p) as number)>=15&&extIsEmployed(p));
+  if(employed.length){
+    const ag=employed.filter(extIsAgri).length, non=employed.length-ag;
+    summary("agri-employment-summary","Agricultural vs Non-Agricultural Employment by Barangay",[{summary:"Agricultural Jobs",value:ag,percentage:share(ag,employed.length)},{summary:"Non-Agricultural Jobs",value:non,percentage:share(non,employed.length)},{summary:"Total Employed (15+)",value:employed.length,percentage:"100.00%"},{summary:"No. of Barangay",value:barangayNames.length,percentage:"-"}],`${note} Agricultural jobs use e17 farmer plus agriculture-related occupation/industry terms. Rate = agricultural employed ÷ employed persons aged 15+ × 100.`);
+    by("agri-employment-by-brgy","Agricultural vs Non-Agricultural Employment by Barangay - Summary by Barangay",[{key:"barangay",label:"Barangay"},{key:"agri",label:"Agricultural Jobs"},{key:"non_agri",label:"Non-Agricultural Jobs"},{key:"employed",label:"Total Employed"},{key:"rate",label:"Percentage Rate (%Rate)"}],barangayNames.map(b=>{const rows=perBarangay.get(b)!.persons.filter(p=>extAge(p)!==null&&(extAge(p) as number)>=15&&extIsEmployed(p));const agri=rows.filter(extIsAgri).length;return {barangay:b,agri,non_agri:rows.length-agri,employed:rows.length,rate:share(agri,rows.length)}}),`${note} Barangays sorted A-Z.`);
+  }
+}
+
 
 function comparativeScoped(ds: ReturnType<typeof getYearDatasets>, barangay: string) {
   return {
@@ -895,6 +1091,10 @@ export function buildBook({ year, barangay = "", sections, includeNameLists = fa
       }
     }
 
+    // Keep the Compendium synchronized with every sector filter exposed by the Sectors tab.
+    appendGenericSectorCoverage(tables, persons, households, barangayNames, perBarangay, includeNameLists, note);
+    appendAgricultureSectorCoverage(tables, persons, households, barangayNames, perBarangay, year, includeNameLists, note);
+
     out.push({
       id: "sectors",
       title: "Sectors by Barangay",
@@ -1246,7 +1446,7 @@ function pdfTable(pdf: jsPDF, t: BookTable, startY: number, pageWidth = 215.9) {
       ...stylesByColumn,
       ...Object.fromEntries(Array.from(numeric).map((i) => [i, { ...(stylesByColumn[i] || {}), halign: "right" }])) as any,
     },
-    didParseCell(data) {
+    didParseCell(data: any) {
       if (data.section === "body" && data.row.raw) {
         const first = String((data.row.raw as any[])[0] ?? "").trim().toUpperCase();
         if (first === "TOTAL") {
