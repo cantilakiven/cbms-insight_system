@@ -1,0 +1,6 @@
+git add .
+git commit -m "Release v1.4.12 - auto update test"
+git push origin main
+
+git tag v1.4.12
+git push origin v1.4.12
